@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Fridgi — Working AR Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Caveat:wght@600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
   /* Fridgi design tokens (from the Figma: cream, forest green, sage, mustard) */
@@ -20,7 +20,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:Archivo,system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow:hidden}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;font-optical-sizing:auto;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input,select{font:inherit;color:inherit}
 .stage{height:100%;display:flex;align-items:center;justify-content:center;gap:56px;padding:24px;
@@ -61,9 +61,9 @@ input,select{font:inherit;color:inherit}
 
 /* ---------- common ---------- */
 .hd-top{display:flex;justify-content:space-between;align-items:flex-start}
-.wm{font-size:32px;font-weight:900;letter-spacing:-.055em;line-height:1}
+.wm{font-size:32px;font-weight:800;letter-spacing:-.045em;line-height:1}
 .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.09em;color:var(--muted);margin-top:3px}
-.title{font-size:33px;font-weight:800;letter-spacing:-.045em;line-height:1.02;margin-top:10px}
+.title{font-size:33px;font-weight:800;letter-spacing:-.04em;line-height:1.05;margin-top:10px}
 .sub{font-size:14px;color:var(--muted);margin-top:6px}
 .sub button{font:inherit;color:inherit;text-decoration:underline;text-decoration-color:rgba(27,43,33,.3);text-underline-offset:3px}
 .label{font-size:10.5px;font-weight:700;letter-spacing:.09em;color:var(--muted);margin-top:14px}
@@ -82,7 +82,7 @@ h2.sec{font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.1}
 .btn.block{width:100%}
 .btn.sm{font-size:12.5px;padding:8px 14px}
 .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;color:#14200f;flex:none}
-.hand{font-family:Caveat,cursive;font-weight:600}
+.hand{font-weight:600}
 .acct{font-size:12px;font-weight:800;border:1.5px solid rgba(27,43,33,.4);border-radius:999px;padding:6px 12px;margin-top:2px;background:var(--cream2)}
 .ico{display:block;object-fit:contain;flex:none}
 .ico-em{display:grid;place-items:center;line-height:1;flex:none}
@@ -101,8 +101,8 @@ h2.sec{font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.1}
 .vf-in .c.tr{top:0;right:0;border-left:0;border-bottom:0;border-radius:0 8px 0 0}
 .vf-in .c.bl{bottom:0;left:0;border-right:0;border-top:0;border-radius:0 0 0 8px}
 .vf-in .c.br{bottom:0;right:0;border-left:0;border-top:0;border-radius:0 0 8px 0}
-.paper{position:relative;background:#fffdf6;color:#2a2a2a;border-radius:3px;padding:11px 12px 10px;font-family:"JetBrains Mono",monospace;font-size:8.6px;line-height:1.75;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-.paper .p-store{text-align:center;font-weight:600;font-size:13px;letter-spacing:.01em;font-family:Archivo,sans-serif}
+.paper{position:relative;background:#fffdf6;color:#2a2a2a;border-radius:3px;padding:11px 12px 10px;font-family:Inter,sans-serif;font-variant-numeric:tabular-nums;font-size:9.5px;line-height:1.65;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.paper .p-store{text-align:center;font-weight:600;font-size:13px;letter-spacing:.01em;font-family:Inter,sans-serif}
 .paper .p-addr{text-align:center;font-size:7px;color:#777;margin-bottom:2px}
 .paper hr{border:0;border-top:1px dashed #aaa;margin:5px 0}
 .paper .ln{display:flex;justify-content:space-between;padding:0 2px;border-radius:2px;transition:background .2s}
@@ -223,7 +223,7 @@ h2.sec{font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.1}
 .vf.br{bottom:112px;right:16px;border-left:0;border-top:0;border-radius:0 0 10px 0}
 .ar-top{position:absolute;top:50px;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:0 18px;z-index:6;pointer-events:none}
 .ar-top > *{pointer-events:auto}
-.ar-label{font-family:Caveat,cursive;font-size:30px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5);line-height:1;margin-top:18px;margin-left:10px}
+.ar-label{font-size:30px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5);line-height:1;margin-top:18px;margin-left:10px}
 .glass{background:rgba(20,26,22,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.18);border-radius:999px;color:#fff}
 .ar-pill{font-size:12px;font-weight:700;padding:8px 12px;display:flex;gap:6px;align-items:center;margin-top:18px}
 .ar-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--tomato);box-shadow:0 0 0 3px rgba(229,83,61,.3)}
