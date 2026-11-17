@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fridgi</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Fridgi</h1>
+      <div id="account" hidden>
+        <span id="who"></span>
+        <button id="signOut" class="ghost">Sign out</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Signed out -->
+      <section id="signedOut" class="card" hidden>
+        <h2>Your fridge, from your receipts</h2>
+        <p>Take a photo of a grocery receipt and Fridgi logs what you bought.</p>
+        <button id="googleSignIn">Sign in with Google</button>
+        <button id="guestSignIn" class="ghost">Try as guest</button>
+        <p id="authError" class="error" hidden></p>
+      </section>
+
+      <!-- Signed in -->
+      <div id="signedIn" hidden>
+        <section class="card">
+          <h2>Scan a receipt</h2>
+          <label class="button" for="receiptInput">Take or choose a photo</label>
+          <input id="receiptInput" type="file" accept="image/*" capture="environment" hidden />
+          <p id="scanStatus" class="status" hidden></p>
+          <img id="receiptPreview" alt="Receipt preview" hidden />
+        </section>
+
+        <section id="review" class="card" hidden>
+          <h2>Check the items</h2>
+          <p>Fix anything the scan got wrong, then add them to your fridge.</p>
+          <ul id="reviewList" class="rows"></ul>
+          <div class="actions">
+            <button id="saveItems">Add to fridge</button>
+            <button id="discardItems" class="ghost">Discard</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>In your fridge</h2>
+          <form id="manualForm" class="inline">
+            <input id="manualName" placeholder="Add an item by hand" maxlength="120" required />
+            <input id="manualQty" type="number" min="1" value="1" aria-label="Quantity" />
+            <button>Add</button>
+          </form>
+          <p id="emptyFridge" class="status">Nothing here yet. Scan a receipt to start.</p>
+          <ul id="fridgeList" class="rows"></ul>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

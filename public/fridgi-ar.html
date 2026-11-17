@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Fridgi — Working AR Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Caveat:wght@600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#121914; --bg2:#18211b; --panel:#1f2a22; --panel2:#26332a; --line:rgba(244,236,220,.12);
+  --cream:#f4ecdc; --cream2:#e9dec6; --mint:#a9d3a8; --mint2:#8cc08b; --mint3:#6e9f6e;
+  --tomato:#e5533d; --amber:#f2b33d; --leaf:#7fc77d; --text:#f4f1e8; --muted:#9fb0a2;
+  --W:210px; --H:360px; --D:170px; --FZ:100px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Archivo,system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+.stage{height:100%;display:flex;align-items:center;justify-content:center;gap:56px;padding:24px;
+  background:radial-gradient(1200px 600px at 70% 10%,#1d2a20 0,transparent 60%),var(--bg)}
+
+/* ---------- side notes (desktop) ---------- */
+.notes{width:360px;max-height:calc(100vh - 48px);overflow:auto;padding-right:6px}
+.notes h1{font-size:76px;font-weight:900;letter-spacing:-.05em;line-height:.9}
+.notes .sub{margin-top:10px;font-weight:700;font-size:15px;color:var(--mint)}
+.notes .meta{margin-top:4px;font-size:12px;color:var(--muted)}
+.box{margin-top:22px;border:1.5px solid var(--line);border-radius:6px;padding:16px 18px;background:rgba(0,0,0,.18)}
+.box h3{font-size:15px;font-weight:800;margin-bottom:10px}
+.box ol{padding-left:18px;font-size:13px;line-height:1.55;color:#d7dccf}
+.box ol li{margin-bottom:5px}
+.box ol b{color:var(--text)}
+.box pre{font-family:"JetBrains Mono",monospace;font-size:10.5px;line-height:1.5;color:#cfe3cd;white-space:pre-wrap}
+.box p{font-size:12.5px;line-height:1.5;color:#cdd3c6}
+.btn-ghost{margin-top:12px;font-size:12px;font-weight:700;border:1.5px solid var(--line);border-radius:999px;padding:7px 14px}
+.btn-ghost:hover{border-color:var(--mint);color:var(--mint)}
+
+/* ---------- phone ---------- */
+.phone{position:relative;overflow:clip;width:390px;height:min(820px,calc(100vh - 48px));border-radius:46px;background:var(--bg2);
+  box-shadow:0 0 0 10px #0b0f0c,0 0 0 11px #2b352d,0 40px 80px rgba(0,0,0,.6);flex:none}
+.notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#000;z-index:50}
+#app{position:absolute;inset:0 0 76px 0}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:54px 18px 24px;display:none;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.screen.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* tab bar */
+.tabs{position:absolute;left:0;right:0;bottom:0;height:76px;background:rgba(18,25,20,.96);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);align-items:center;padding:0 6px 10px;z-index:40;backdrop-filter:blur(10px)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:var(--muted)}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.active{color:var(--mint)}
+.tab.scan .sring{width:54px;height:54px;border-radius:50%;background:var(--mint);color:#13301a;display:grid;place-items:center;margin-top:-26px;
+  box-shadow:0 0 0 6px var(--bg2),0 10px 24px rgba(0,0,0,.4)}
+.tab.scan .sring svg{width:26px;height:26px;stroke-width:2.2}
+.tab.scan.active .ring{background:var(--cream)}
+
+/* ---------- common ---------- */
+.h-big{font-size:44px;font-weight:900;letter-spacing:-.045em;line-height:.92}
+.h-sec{font-size:17px;font-weight:800;margin:24px 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+.h-sec small{font-size:12px;color:var(--muted);font-weight:600}
+.card{border:1.5px solid var(--line);border-radius:8px;background:rgba(0,0,0,.2);padding:14px}
+.muted{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--panel2)}
+.exp-red{background:rgba(229,83,61,.18);color:#ff8b77}
+.exp-amb{background:rgba(242,179,61,.18);color:#ffcd6e}
+.exp-grn{background:rgba(127,199,125,.16);color:#a6e3a4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:15px;border-radius:999px;padding:13px 20px;background:var(--mint);color:#12301a;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn.cream{background:var(--cream)}
+.btn.line{background:transparent;color:var(--text);border:1.5px solid var(--line)}
+.btn.block{width:100%}
+.btn.sm{font-size:12px;padding:7px 12px}
+.avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;color:#14200f;flex:none}
+.hand{font-family:Caveat,cursive;font-weight:600}
+
+/* ---------- home ---------- */
+.home-top{display:flex;justify-content:space-between;align-items:flex-start}
+.wordmark{font-size:58px;font-weight:900;letter-spacing:-.06em;line-height:.85}
+.who{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:999px;padding:4px 10px 4px 4px;font-size:12px;font-weight:700;margin-top:6px}
+.greet{margin-top:10px;font-size:14px;color:#d7dccf}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.stat{border:1.5px solid var(--line);border-radius:8px;padding:10px;background:rgba(0,0,0,.2)}
+.stat b{display:block;font-size:24px;font-weight:900;letter-spacing:-.03em}
+.stat span{font-size:10.5px;color:var(--muted);font-weight:600;line-height:1.2;display:block;margin-top:2px}
+.hscroll{display:flex;gap:10px;overflow-x:auto;margin:0 -18px;padding:0 18px 4px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.soon{flex:none;width:118px;border-radius:10px;background:var(--cream);color:#1b241d;padding:12px 10px 10px;position:relative}
+.soon .em{font-size:34px}
+.soon b{display:block;font-size:13.5px;margin-top:4px;line-height:1.1}
+.soon .pill{margin-top:6px}
+.soon .use{margin-top:8px;width:100%;font-size:11.5px;font-weight:800;border-radius:999px;padding:6px;background:#1b241d;color:var(--cream)}
+.recipe{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.recipe:last-child{border:0}
+.recipe .em{width:48px;height:48px;border-radius:10px;background:var(--panel2);display:grid;place-items:center;font-size:26px;flex:none}
+.recipe b{font-size:14px;display:block}
+.recipe small{font-size:11.5px;color:var(--muted)}
+.coupon{flex:none;width:200px;border-radius:10px;border:1.5px dashed rgba(169,211,168,.5);padding:12px;background:rgba(169,211,168,.06)}
+.coupon .deal{font-size:18px;font-weight:900;color:var(--mint);letter-spacing:-.02em}
+.coupon .it{font-size:13px;font-weight:700;margin-top:2px}
+.coupon .st{font-size:11px;color:var(--muted);margin-top:4px}
+.feed{list-style:none}
+.feed li{display:flex;gap:10px;align-items:center;padding:8px 0;font-size:13px;border-bottom:1px solid var(--line)}
+.feed li:last-child{border:0}
+.feed .avatar{width:26px;height:26px;font-size:11px}
+.feed time{margin-left:auto;font-size:11px;color:var(--muted);flex:none}
+
+/* ---------- AR fridge ---------- */
+#s-fridge{padding:0;overflow:clip}
+.ar{position:absolute;inset:0;overflow:clip;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;
+  background:linear-gradient(180deg,#3a3127 0,#57483a 46%,#6d5b49 46.2%,#4c3f33 100%)}
+.ar.dragging{cursor:grabbing}
+.ar .backdrop{position:absolute;inset:0;background-size:cover;background-position:center}
+.ar .backdrop::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 30%,transparent 70%,rgba(0,0,0,.45))}
+.ar .wall-tiles{position:absolute;left:0;right:0;top:18%;height:28%;opacity:.18;
+  background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:34px 22px}
+.ar .counter{position:absolute;left:-10%;right:-10%;top:44%;height:10px;background:#2c241d;opacity:.7}
+.floorgrid{position:absolute;left:-50%;right:-50%;top:56%;height:70%;transform:perspective(500px) rotateX(62deg);transform-origin:top;
+  background-image:linear-gradient(rgba(169,211,168,.55) 1px,transparent 1px),linear-gradient(90deg,rgba(169,211,168,.55) 1px,transparent 1px);
+  background-size:40px 40px;opacity:0;transition:opacity .6s;mask-image:radial-gradient(ellipse at 50% 20%,#000 0,transparent 65%);-webkit-mask-image:radial-gradient(ellipse at 50% 20%,#000 0,transparent 65%)}
+.ar.detecting .floorgrid{opacity:1;animation:gridpulse 1.2s ease-in-out infinite}
+@keyframes gridpulse{50%{opacity:.4}}
+.vf{position:absolute;width:34px;height:34px;border:3px solid rgba(255,255,255,.85);z-index:5;pointer-events:none}
+.vf.tl{top:62px;left:16px;border-right:0;border-bottom:0;border-radius:10px 0 0 0}
+.vf.tr{top:62px;right:16px;border-left:0;border-bottom:0;border-radius:0 10px 0 0}
+.vf.bl{bottom:112px;left:16px;border-right:0;border-top:0;border-radius:0 0 0 10px}
+.vf.br{bottom:112px;right:16px;border-left:0;border-top:0;border-radius:0 0 10px 0}
+.ar-top{position:absolute;top:50px;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:0 18px;z-index:6;pointer-events:none}
+.ar-top > *{pointer-events:auto}
+.ar-label{font-family:Caveat,cursive;font-size:30px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.5);line-height:1;margin-top:18px;margin-left:10px}
+.glass{background:rgba(20,26,22,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.18);border-radius:999px;color:#fff}
+.ar-pill{font-size:12px;font-weight:700;padding:8px 12px;display:flex;gap:6px;align-items:center;margin-top:18px}
+.ar-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--tomato);box-shadow:0 0 0 3px rgba(229,83,61,.3)}
+.ar-bottom{position:absolute;bottom:18px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:22px;z-index:6}
+.ar-btn{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-size:20px}
+.ar-btn.big{width:66px;height:66px;border:4px solid #fff;background:rgba(255,255,255,.18)}
+.ar-btn svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ar-chips{position:absolute;bottom:96px;left:0;right:0;display:flex;justify-content:center;gap:8px;z-index:6}
+.ar-chip{font-size:11.5px;font-weight:700;padding:7px 12px}
+.ar-chip.on{background:var(--mint);color:#12301a;border-color:var(--mint)}
+.ar-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;text-align:center;pointer-events:none;transition:opacity .4s}
+.ar-hint .glass{padding:12px 18px;border-radius:14px;font-size:13px;font-weight:600}
+.ar-hint .phoneicon{font-size:30px;animation:sway 1.4s ease-in-out infinite;display:inline-block;margin-bottom:6px}
+@keyframes sway{0%,100%{transform:translateX(-14px) rotate(-8deg)}50%{transform:translateX(14px) rotate(8deg)}}
+.ar:not(.detecting) .ar-hint{opacity:0}
+.reticle{position:absolute;left:50%;top:76%;width:120px;height:40px;margin-left:-60px;border:2px solid rgba(255,255,255,.9);border-radius:50%;z-index:2;opacity:0;transition:opacity .3s;pointer-events:none}
+.ar.detecting .reticle{opacity:1;animation:ret 1s ease-in-out infinite}
+@keyframes ret{50%{transform:scale(1.15)}}
+
+/* 3D */
+.scene{position:absolute;inset:0;perspective:1100px;perspective-origin:50% 40%;z-index:3}
+.anchor{position:absolute;left:calc(50% + 34px);top:50%;width:var(--W);height:var(--H);margin-left:calc(var(--W) / -2);margin-top:calc(var(--H) / -2 - 10px);
+  transform-style:preserve-3d;transition:opacity .4s}
+.ar.detecting .anchor{opacity:0}
+.anchor.drop{animation:drop .8s cubic-bezier(.2,1.4,.4,1)}
+@keyframes drop{from{transform:translateY(-60px) scale(.6);opacity:0}}
+.fridge{position:absolute;inset:0;transform-style:preserve-3d;--ry:-28;--rx:12;--s:1;
+  transform:scale(var(--s)) rotateX(calc(var(--rx) * 1deg)) rotateY(calc(var(--ry) * 1deg))}
+.f{position:absolute;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+/* outer body faces */
+.f.side{width:var(--D);height:var(--H);top:0;left:calc((var(--W) - var(--D)) / 2);background:linear-gradient(180deg,#9cc99b,#86b585);border-radius:16px}
+.f.side.l{transform:rotateY(-90deg) translateZ(calc(var(--W) / 2));filter:brightness(.82)}
+.f.side.r{transform:rotateY(90deg) translateZ(calc(var(--W) / 2));filter:brightness(.92)}
+.f.back{width:var(--W);height:var(--H);left:0;top:0;background:#7da97c;border-radius:16px;transform:rotateY(180deg) translateZ(calc(var(--D) / 2))}
+.f.topf{width:var(--W);height:var(--D);left:0;top:calc((var(--H) - var(--D)) / 2);background:#b8dcb6;border-radius:18px;transform:rotateX(90deg) translateZ(calc(var(--H) / 2))}
+.f.bot{width:var(--W);height:var(--D);left:0;top:calc((var(--H) - var(--D)) / 2);background:#4f6f4e;transform:rotateX(-90deg) translateZ(calc(var(--H) / 2))}
+/* inner lining */
+.f.in{background:linear-gradient(180deg,#fbf6ea,#e8dfcb)}
+.f.in.back{transform:translateZ(calc(var(--D) / -2 + 8px));width:calc(var(--W) - 16px);left:8px;border-radius:6px;background:linear-gradient(180deg,#fffaf0,#e6dcc6)}
+.f.in.l{width:calc(var(--D) - 8px);height:calc(var(--H) - 16px);top:8px;left:calc((var(--W) - var(--D) + 8px) / 2);transform:rotateY(-90deg) translateZ(calc(var(--W) / 2 - 8px)) rotateY(180deg);filter:brightness(.9)}
+.f.in.r{width:calc(var(--D) - 8px);height:calc(var(--H) - 16px);top:8px;left:calc((var(--W) - var(--D) + 8px) / 2);transform:rotateY(90deg) translateZ(calc(var(--W) / 2 - 8px)) rotateY(180deg);filter:brightness(.96)}
+.f.in.t{width:calc(var(--W) - 16px);height:calc(var(--D) - 8px);left:8px;top:calc((var(--H) - var(--D) + 8px) / 2);transform:rotateX(90deg) translateZ(calc(var(--H) / 2 - 8px)) rotateX(180deg);background:#fff8e8}
+.f.in.b{width:calc(var(--W) - 16px);height:calc(var(--D) - 8px);left:8px;top:calc((var(--H) - var(--D) + 8px) / 2);transform:rotateX(-90deg) translateZ(calc(var(--H) / 2 - 8px)) rotateX(180deg);background:#ddd2bb}
+/* front rim (frame around opening) */
+.rim{position:absolute;background:#9ccb9b;transform:translateZ(calc(var(--D) / 2));backface-visibility:visible}
+.light{position:absolute;left:30%;width:40%;height:6px;top:calc(var(--FZ) + 10px);border-radius:4px;background:#fff;box-shadow:0 0 40px 18px rgba(255,248,215,.7);transform:translateZ(calc(var(--D) / -2 + 30px));opacity:0;transition:opacity .4s}
+.fridge.open .light{opacity:1}
+/* shelves */
+.shelf{position:absolute;left:8px;width:calc(var(--W) - 16px);height:calc(var(--D) - 8px);margin-top:calc((var(--D) - 8px) / -2);
+  background:linear-gradient(rgba(255,255,255,.55),rgba(214,236,240,.5));border:1px solid rgba(255,255,255,.8);transform:translateZ(-4px) rotateX(90deg)}
+.shelf.solid{background:#93c492;border:0}
+.crisper{position:absolute;left:12px;width:calc(var(--W) - 24px);height:44px;bottom:10px;border-radius:4px 4px 10px 10px;
+  background:linear-gradient(rgba(220,240,232,.25),rgba(190,225,214,.5));border:2px solid rgba(255,255,255,.75);transform:translateZ(calc(var(--D) / 2 - 22px))}
+.shadow{position:absolute;left:-60px;right:-60px;height:260px;top:calc(var(--H) - 130px);background:radial-gradient(ellipse at center,rgba(0,0,0,.55) 0,rgba(0,0,0,.25) 35%,transparent 65%);transform:rotateX(90deg)}
+.foot{position:absolute;width:18px;height:12px;background:#3b4a3b;border-radius:0 0 4px 4px;top:var(--H)}
+/* doors */
+.door{position:absolute;left:0;width:var(--W);transform-style:preserve-3d;transform-origin:0 50%;
+  transform:translateZ(calc(var(--D) / 2 + 1px)) rotateY(var(--open,0deg));transition:transform .9s cubic-bezier(.3,1.3,.5,1);cursor:pointer}
+.door.main{top:calc(var(--FZ) + 3px);height:calc(var(--H) - var(--FZ) - 3px)}
+.door.frz{top:0;height:var(--FZ)}
+.door.opened{--open:-122deg}
+.door .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:16px}
+.door .front{background:linear-gradient(135deg,#bfe2bd 0,#a9d3a8 40%,#93c392 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.25),inset -6px -8px 20px rgba(0,0,0,.08)}
+.door.frz .front{border-radius:18px 18px 8px 8px}
+.door.main .front{border-radius:8px 8px 18px 18px}
+.handle{position:absolute;right:14px;width:10px;border-radius:6px;background:linear-gradient(90deg,#d9d9d4,#fff,#b9bab4);box-shadow:-2px 2px 4px rgba(0,0,0,.25)}
+.door.frz .handle{bottom:12px;height:46px}
+.door.main .handle{top:16px;height:90px}
+.logo{position:absolute;left:18px;top:16px;font-weight:900;font-size:20px;letter-spacing:-.05em;color:#f8fff4;text-shadow:0 1px 0 rgba(0,0,0,.12)}
+.badge-door{position:absolute;left:16px;bottom:16px;font-size:10px;font-weight:800;color:#1f4a22;background:rgba(255,255,255,.55);padding:4px 7px;border-radius:999px}
+.door .inner{transform:rotateY(180deg);background:linear-gradient(180deg,#f7f1e4,#e5dcc8);padding:14px 10px;display:flex;flex-direction:column;justify-content:space-around;
+  box-shadow:inset 0 0 0 6px #a5d0a4}
+.bin{position:relative;min-height:46px;display:flex;align-items:flex-end;justify-content:center;gap:2px;padding:0 6px 6px;border-bottom:10px solid rgba(169,211,168,.85);border-radius:0 0 4px 4px;flex-wrap:wrap}
+.bin .item2d{font-size:24px;position:relative;cursor:pointer}
+/* items */
+#zones{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+#zones .item{pointer-events:auto}
+.item{position:absolute;left:-20px;top:-44px;width:40px;height:44px;transform-style:flat;cursor:pointer}
+.item .pop{display:grid;place-items:end center;width:100%;height:100%;font-size:30px;line-height:1;filter:drop-shadow(0 3px 2px rgba(0,0,0,.25))}
+.item.new .pop{animation:popin .7s cubic-bezier(.2,1.6,.4,1) both;animation-delay:var(--d,0s)}
+@keyframes popin{from{transform:translateY(-70px) scale(.2);opacity:0}}
+.qty{position:absolute;right:-4px;top:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#1b241d;color:#fff;font-size:9.5px;font-weight:800;display:grid;place-items:center}
+.ring{position:absolute;inset:-4px;border-radius:50%;pointer-events:none}
+.item.urgent .ring,.item2d.urgent .ring{box-shadow:0 0 0 2px var(--tomato),0 0 14px 4px rgba(229,83,61,.6);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.fridge.focus .item:not(.urgent) .pop,.fridge.focus .item2d:not(.urgent){opacity:.25;filter:grayscale(1)}
+
+/* ---------- scan ---------- */
+.scan-hero{margin-top:18px;border-radius:12px;background:var(--cream);color:#1b241d;padding:18px;position:relative;overflow:hidden;min-height:170px}
+.scan-hero .hand{font-size:26px;color:#3b4a3b}
+.scan-hero .mini-receipt{position:absolute;right:18px;top:18px;width:96px;background:#fff;border-radius:4px;padding:8px;font-family:"JetBrains Mono",monospace;font-size:7px;line-height:1.6;color:#555;transform:rotate(6deg);box-shadow:0 8px 20px rgba(0,0,0,.15)}
+.scan-hero p{font-size:13px;max-width:190px;margin-top:6px;line-height:1.4}
+.opts{display:grid;gap:10px;margin-top:16px}
+.opt{display:flex;gap:14px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:14px;text-align:left;width:100%;background:rgba(0,0,0,.2);cursor:pointer}
+.opt:hover{border-color:var(--mint)}
+.opt .ic{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;background:var(--panel2);font-size:22px;flex:none}
+.opt b{display:block;font-size:14.5px}
+.opt small{font-size:11.5px;color:var(--muted)}
+.scanning{display:grid;grid-template-columns:1fr 128px;gap:12px;margin-top:16px;align-items:start}
+.rframe{position:relative;padding:12px}
+.rframe .vfc{position:absolute;width:20px;height:20px;border:3px solid var(--mint)}
+.rframe .vfc:nth-child(1){top:0;left:0;border-right:0;border-bottom:0}
+.rframe .vfc:nth-child(2){top:0;right:0;border-left:0;border-bottom:0}
+.rframe .vfc:nth-child(3){bottom:0;left:0;border-right:0;border-top:0}
+.rframe .vfc:nth-child(4){bottom:0;right:0;border-left:0;border-top:0}
+.receipt{position:relative;background:#fffdf7;color:#2a2a2a;font-family:"JetBrains Mono",monospace;font-size:9.5px;line-height:1.55;padding:14px 12px 18px;border-radius:2px;overflow:hidden;
+  -webkit-mask:linear-gradient(#000,#000) top/100% calc(100% - 8px) no-repeat, radial-gradient(circle at 5px 8px,transparent 4px,#000 4.5px) bottom/10px 8px repeat-x;
+  mask:linear-gradient(#000,#000) top/100% calc(100% - 8px) no-repeat, radial-gradient(circle at 5px 8px,transparent 4px,#000 4.5px) bottom/10px 8px repeat-x}
+.receipt img{width:100%;display:block}
+.receipt.photo{padding:0}
+.receipt .c{text-align:center}
+.receipt .ln{display:flex;justify-content:space-between;transition:background .2s;padding:0 2px;border-radius:2px}
+.receipt .ln.hit{background:rgba(169,211,168,.45)}
+.receipt hr{border:0;border-top:1px dashed #999;margin:6px 0}
+.beam{position:absolute;left:0;right:0;height:46px;top:-46px;background:linear-gradient(180deg,transparent,rgba(169,211,168,.55));border-bottom:2px solid #6fbf6d;animation:beam 1.6s linear infinite;pointer-events:none}
+@keyframes beam{to{top:100%}}
+.tags{display:flex;flex-direction:column;gap:7px;padding-top:10px}
+.tag{display:flex;align-items:center;gap:6px;border:1.5px solid var(--cream);border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700;animation:tagin .35s ease both;background:rgba(244,236,220,.06)}
+.tag .ck{margin-left:auto;color:var(--mint)}
+@keyframes tagin{from{opacity:0;transform:translateX(-14px)}}
+.ai-status{margin-top:14px;font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--mint);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.banner{margin-top:12px;font-size:11.5px;line-height:1.4;border-radius:8px;padding:10px 12px;background:rgba(242,179,61,.12);color:#ffd88c;border:1px solid rgba(242,179,61,.3)}
+.rv{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.rv .em{font-size:26px;text-align:center}
+.rv input.nm{width:100%;background:transparent;border:0;border-bottom:1px dashed transparent;font-weight:700;font-size:14px;padding:2px 0}
+.rv input.nm:focus{outline:0;border-bottom-color:var(--mint)}
+.rv .sub{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;align-items:center}
+.rv select{background:var(--panel2);border:0;border-radius:999px;font-size:11px;font-weight:700;padding:3px 6px}
+.dup{font-size:11px;color:#ffcd6e;font-weight:700}
+.stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:999px}
+.stepper button{width:26px;height:26px;font-weight:800;font-size:15px}
+.stepper span{min-width:18px;text-align:center;font-size:13px;font-weight:800}
+.x{color:var(--muted);font-size:18px;width:24px}
+.addrow{display:flex;gap:8px;margin-top:12px}
+.addrow input{flex:1;background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:10px 14px;font-size:13px}
+.addrow input:focus{outline:0;border-color:var(--mint)}
+.sticky-foot{position:sticky;bottom:-24px;margin:16px -18px -24px;padding:14px 18px 18px;background:linear-gradient(180deg,transparent,var(--bg2) 30%)}
+
+/* ---------- inventory ---------- */
+.search{width:100%;margin-top:16px;background:var(--panel);border:1.5px solid var(--line);border-radius:999px;padding:11px 16px;font-size:14px}
+.search:focus{outline:0;border-color:var(--mint)}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:12px -18px 0;padding:0 18px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font-size:12px;font-weight:700;padding:7px 12px;border-radius:999px;border:1.5px solid var(--line)}
+.chip.on{background:var(--cream);color:#1b241d;border-color:var(--cream)}
+.inv{margin-top:8px}
+.row{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.row .em{width:44px;height:44px;border-radius:10px;background:var(--cream);display:grid;place-items:center;font-size:26px;flex:none}
+.row .mid{flex:1;min-width:0}
+.row b{font-size:14.5px;display:block}
+.row small{font-size:11.5px;color:var(--muted)}
+.empty{padding:30px 0;text-align:center;color:var(--muted);font-size:13px}
+
+/* ---------- household ---------- */
+.members{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.member{border:1.5px solid var(--line);border-radius:10px;padding:12px 8px;text-align:center;background:rgba(0,0,0,.2)}
+.member.me{border-color:var(--mint);background:rgba(169,211,168,.08)}
+.member .avatar{width:44px;height:44px;font-size:18px;margin:0 auto 6px}
+.member b{font-size:13px;display:block}
+.member small{font-size:10.5px;color:var(--muted)}
+.shop li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;list-style:none}
+.shop .cb{width:22px;height:22px;border-radius:6px;border:2px solid var(--muted);display:grid;place-items:center;font-size:13px;flex:none;cursor:pointer}
+.shop li.done span{text-decoration:line-through;color:var(--muted)}
+.shop li.done .cb{background:var(--mint);border-color:var(--mint);color:#12301a}
+.shop small{margin-left:auto;font-size:11px;color:var(--muted)}
+
+/* ---------- sheet / toast ---------- */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:60;opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:61;background:var(--bg2);border-top:1.5px solid var(--line);border-radius:22px 22px 0 0;padding:10px 20px 26px;
+  transform:translateY(105%);transition:transform .3s cubic-bezier(.3,1,.4,1);max-height:82%;overflow:auto}
+.sheet.on{transform:none}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+.sh-head{display:flex;gap:14px;align-items:center}
+.sh-head .em{width:70px;height:70px;border-radius:16px;background:var(--cream);display:grid;place-items:center;font-size:42px;flex:none}
+.sh-head h2{font-size:24px;font-weight:900;letter-spacing:-.03em;line-height:1}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.kv div{border:1.5px solid var(--line);border-radius:8px;padding:9px 10px}
+.kv small{display:block;font-size:10.5px;color:var(--muted);font-weight:600}
+.kv b{font-size:14px}
+.bar{height:6px;border-radius:3px;background:var(--panel2);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px}
+.nut{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;text-align:center}
+.nut div{background:var(--panel);border-radius:8px;padding:8px 2px}
+.nut b{display:block;font-size:16px;font-weight:900}
+.nut small{font-size:10px;color:var(--muted)}
+.sh-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px}
+.toast{position:absolute;left:50%;top:104px;transform:translate(-50%,-30px);opacity:0;z-index:70;background:var(--cream);color:#1b241d;font-size:13px;font-weight:700;padding:10px 16px;border-radius:999px;
+  white-space:nowrap;transition:.3s;box-shadow:0 10px 30px rgba(0,0,0,.4);pointer-events:none;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hidden-file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+@media (max-width:980px){.notes{display:none}}
+@media (max-width:520px){
+  .stage{padding:0}
+  .phone{width:100vw;height:100vh;height:100dvh;border-radius:0;box-shadow:none}
+  .notch{display:none}
+  .screen{padding-top:calc(24px + env(safe-area-inset-top))}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="notes">
+    <h1>Fridgi</h1>
+    <div class="sub">Phase 2 · Working AR prototype</div>
+    <div class="meta">INTR3010 Immersive Media 1 — Yasmin, Kiara &amp; Mekaeda</div>
+    <div class="box">
+      <h3>Try the flow</h3>
+      <ol>
+        <li><b>Scan</b>: tap the centre button and use the sample receipt, or upload a photo of a real one.</li>
+        <li><b>AI sorts it</b>: items get a category, a shelf and an expiry estimate. Duplicates you already own are flagged.</li>
+        <li><b>Store in Fridge</b>: the items drop into the 3D fridge in AR view. Drag to rotate, scroll to zoom, tap the doors to open them.</li>
+        <li><b>Tap any item</b> for its quantity, expiry, nutrition and who added it.</li>
+        <li><b>Switch roommate</b> on Home and tap "Used it". Kiara finishing the milk now shows up for everyone.</li>
+      </ol>
+    </div>
+    <div class="box">
+      <h3>Firebase hookup</h3>
+      <p>When this page is deployed to <b>fridgiprototype.web.app</b>, it switches to live mode on its own. It uses the same sign-in, the same Gemini receipt reader, and the same Firestore data as the team's scanner:</p>
+      <pre>users/{uid}/fridgeItems/{id}
+{ name, category, quantity, price,
+  addedAt, expiresAt, addedBy }</pre>
+      <p style="margin-top:8px">Here it runs on demo data.</p>
+    </div>
+    <button class="btn-ghost" id="resetBtn">Reset demo data</button>
+  </aside>
+
+  <div class="phone" id="phone">
+    <div class="notch"></div>
+    <main id="app">
+      <section class="screen" id="s-home"></section>
+
+      <section class="screen" id="s-fridge">
+        <div class="ar detecting" id="ar">
+          <div class="backdrop" id="backdrop"><div class="wall-tiles"></div><div class="counter"></div></div>
+          <div class="floorgrid"></div>
+          <div class="reticle"></div>
+          <div class="vf tl"></div><div class="vf tr"></div><div class="vf bl"></div><div class="vf br"></div>
+          <div class="scene">
+            <div class="anchor" id="anchor">
+              <div class="fridge" id="fridge">
+                <div class="shadow"></div>
+                <div class="foot" style="left:16px;transform:translateZ(60px)"></div>
+                <div class="foot" style="right:16px;transform:translateZ(60px)"></div>
+                <div class="f side l"></div><div class="f side r"></div>
+                <div class="f back"></div><div class="f topf"></div><div class="f bot"></div>
+                <div class="f in back" style="height:calc(var(--H) - 16px);top:8px"></div>
+                <div class="f in l"></div><div class="f in r"></div><div class="f in t"></div><div class="f in b"></div>
+                <div class="light"></div>
+                <div class="shelf solid" style="top:var(--FZ)"></div>
+                <div class="shelf" style="top:174px"></div>
+                <div class="shelf" style="top:252px"></div>
+                <div id="zones"></div>
+                <div class="crisper"></div>
+                <div class="door frz" id="doorFrz" data-door="frz">
+                  <div class="face front"><div class="logo">Fridgi</div><div class="handle"></div></div>
+                  <div class="face inner" id="frzInner"></div>
+                </div>
+                <div class="door main" id="doorMain" data-door="main">
+                  <div class="face front"><div class="handle"></div><div class="badge-door" id="doorBadge"></div></div>
+                  <div class="face inner" id="doorInner"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ar-hint"><div class="glass"><div class="phoneicon">📱</div><div>Detecting surface… move your phone slowly</div></div></div>
+          <div class="ar-top">
+            <div class="ar-label">AR view ↓</div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <div class="glass ar-pill" id="arPill"></div>
+              <label class="glass ar-pill" style="cursor:pointer;margin-top:0" title="Use a photo of your kitchen as the AR backdrop">📷 Room photo
+                <input type="file" accept="image/*" capture="environment" class="hidden-file" id="roomFile"></label>
+            </div>
+          </div>
+          <div class="ar-chips">
+            <button class="glass ar-chip" id="focusChip">⚠︎ Highlight expiring</button>
+            <button class="glass ar-chip" id="openAllChip">Open fridge</button>
+          </div>
+          <div class="ar-bottom">
+            <button class="glass ar-btn" data-go="household" title="Shopping list"><svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></button>
+            <button class="ar-btn big" data-go="scan" title="Scan receipt"><svg viewBox="0 0 24 24"><path d="M12 8v8M8 12h8"/></svg></button>
+            <button class="glass ar-btn" data-go="inventory" title="Inventory"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="s-scan"></section>
+      <section class="screen" id="s-inventory"></section>
+      <section class="screen" id="s-household"></section>
+    </main>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab" data-go="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+      <button class="tab" data-go="fridge"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M5 9h14M9 5v2M9 12v4"/></svg>AR Fridge</button>
+      <button class="tab scan" data-go="scan"><span class="sring"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg></span>Scan</button>
+      <button class="tab" data-go="inventory"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Inventory</button>
+      <button class="tab" data-go="household"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 5 2.2 5 5"/></svg>Household</button>
+    </nav>
+
+    <div class="scrim" id="scrim"></div>
+    <div class="sheet" id="sheet"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   Catalog — what the "AI" knows about grocery items.
+   In production this comes from your Firebase function +
+   a product/nutrition API.
+   ========================================================= */
+const DAY = 864e5;
+const CATALOG = {
+  'apples':         {name:'Apples',          e:'🍎', cat:'produce',   days:21, n:[95,0.5,25,0.3]},
+  'milk 2%':        {name:'Milk 2%',         e:'🥛', cat:'dairy',     days:7,  n:[122,8,12,5]},
+  'greek yogurt':   {name:'Greek Yogurt',    e:'🥣', cat:'dairy',     days:14, n:[100,10,6,4]},
+  'baby spinach':   {name:'Baby Spinach',    e:'🌿', cat:'produce',   days:5,  n:[7,0.9,1.1,0.1]},
+  'eggs':           {name:'Eggs',            e:'🥚', cat:'dairy',     days:21, n:[72,6,0.4,5]},
+  'chicken thighs': {name:'Chicken Thighs',  e:'🍗', cat:'meat',      days:2,  n:[209,26,0,11]},
+  'cheddar':        {name:'Cheddar',         e:'🧀', cat:'dairy',     days:25, n:[113,7,0.4,9]},
+  'strawberries':   {name:'Strawberries',    e:'🍓', cat:'produce',   days:3,  n:[49,1,12,0.5]},
+  'orange juice':   {name:'Orange Juice',    e:'🧃', cat:'drinks',    days:10, n:[112,1.7,26,0.5]},
+  'bell peppers':   {name:'Bell Peppers',    e:'🫑', cat:'produce',   days:7,  n:[31,1,6,0.3]},
+  'tomatoes':       {name:'Tomatoes',        e:'🍅', cat:'produce',   days:6,  n:[22,1,4.8,0.2]},
+  'lettuce':        {name:'Lettuce',         e:'🥬', cat:'produce',   days:6,  n:[5,0.5,1,0.1]},
+  'carrots':        {name:'Carrots',         e:'🥕', cat:'produce',   days:14, n:[25,0.6,6,0.1]},
+  'butter':         {name:'Butter',          e:'🧈', cat:'dairy',     days:30, n:[102,0.1,0,11.5]},
+  'leftover pasta': {name:'Leftover Pasta',  e:'🍝', cat:'leftovers', days:3,  n:[220,8,43,1.3]},
+  'avocado':        {name:'Avocado',         e:'🥑', cat:'produce',   days:3,  n:[240,3,13,22]},
+  'watermelon':     {name:'Watermelon',      e:'🍉', cat:'produce',   days:5,  n:[46,0.9,11.5,0.2]},
+  'ketchup':        {name:'Ketchup',         e:'🥫', cat:'condiments',days:90, n:[20,0.2,5,0]},
+  'sparkling water':{name:'Sparkling Water', e:'🥤', cat:'drinks',    days:120,n:[0,0,0,0]},
+  'frozen peas':    {name:'Frozen Peas',     e:'🧊', cat:'frozen',    days:120,n:[62,4,11,0.3]},
+  'ice cream':      {name:'Ice Cream',       e:'🍨', cat:'frozen',    days:60, n:[207,3.5,24,11]},
+  'lemon':          {name:'Lemon',           e:'🍋', cat:'produce',   days:14, n:[17,0.6,5.4,0.2]},
+  'banana':         {name:'Bananas',         e:'🍌', cat:'produce',   days:6,  n:[105,1.3,27,0.4]},
+  'bread':          {name:'Bread',           e:'🍞', cat:'bakery',    days:6,  n:[80,3,15,1]},
+  'cucumber':       {name:'Cucumber',        e:'🥒', cat:'produce',   days:7,  n:[16,0.7,3.6,0.1]},
+  'onion':          {name:'Onions',          e:'🧅', cat:'produce',   days:30, n:[44,1.2,10,0.1]},
+  'potato':         {name:'Potatoes',        e:'🥔', cat:'produce',   days:30, n:[160,4,37,0.2]},
+  'grapes':         {name:'Grapes',          e:'🍇', cat:'produce',   days:7,  n:[62,0.6,16,0.3]},
+  'orange':         {name:'Oranges',         e:'🍊', cat:'produce',   days:14, n:[62,1.2,15,0.2]},
+  'broccoli':       {name:'Broccoli',        e:'🥦', cat:'produce',   days:5,  n:[31,2.5,6,0.3]},
+  'salmon':         {name:'Salmon',          e:'🐟', cat:'meat',      days:2,  n:[208,20,0,13]},
+  'ground beef':    {name:'Ground Beef',     e:'🥩', cat:'meat',      days:2,  n:[250,26,0,17]},
+  'bacon':          {name:'Bacon',           e:'🥓', cat:'meat',      days:7,  n:[43,3,0.1,3.3]},
+  'chicken':        {name:'Chicken',         e:'🍗', cat:'meat',      days:2,  n:[165,31,0,3.6]},
+  'yogurt':         {name:'Yogurt',          e:'🥣', cat:'dairy',     days:14, n:[100,10,6,4]},
+  'cheese':         {name:'Cheese',          e:'🧀', cat:'dairy',     days:25, n:[113,7,0.4,9]},
+  'milk':           {name:'Milk',            e:'🥛', cat:'dairy',     days:7,  n:[122,8,12,5]},
+  'juice':          {name:'Juice',           e:'🧃', cat:'drinks',    days:10, n:[112,1.7,26,0.5]},
+  'pepper':         {name:'Peppers',         e:'🫑', cat:'produce',   days:7,  n:[31,1,6,0.3]},
+};
+const CATS = {produce:'Produce',dairy:'Dairy & Eggs',meat:'Meat',bakery:'Bakery',leftovers:'Leftovers',drinks:'Drinks',condiments:'Condiments',pantry:'Pantry',frozen:'Frozen',other:'Other'};
+const ZONE_OF = {produce:'crisper',dairy:'top',meat:'middle',bakery:'middle',leftovers:'middle',drinks:'door',condiments:'door',pantry:'door',frozen:'freezer',other:'middle'};
+const CAT_EMOJI = {produce:'🥦',dairy:'🥛',meat:'🥩',bakery:'🍞',leftovers:'🍱',drinks:'🧃',condiments:'🥫',pantry:'🥫',frozen:'🧊',other:'🛒'};
+// Filled in by the Firebase module at the bottom when the page is hosted on Firebase.
+const FridgiHooks = {live:false, user:null, scanPhoto:null};
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const ZONE_NAME = {crisper:'Crisper drawer',top:'Top shelf',middle:'Middle shelf',door:'Door bins',freezer:'Freezer'};
+const PEOPLE = {
+  yasmin:{name:'Yasmin',color:'#f2b33d'},
+  kiara:{name:'Kiara',color:'#f08a6b'},
+  mekaeda:{name:'Mekaeda',color:'#8fd0e0'},
+};
+const SAMPLE_RECEIPT = {
+  store:'MAPLE MARKET #204', addr:'88 Queen St W, Toronto', date:'2026-11-16  12:41',
+  lines:[['Apples Gala 1.5kg','apples',1,4.99],['Milk 2% 2L','milk 2%',1,5.49],['Greek Yogurt 750g','greek yogurt',1,4.79],
+    ['Baby Spinach 312g','baby spinach',1,3.99],['Eggs Large 12','eggs',1,4.29],['Chicken Thighs','chicken thighs',1,9.87],
+    ['Cheddar Old 400g','cheddar',1,7.49],['Strawberries 1lb','strawberries',1,4.99],['Orange Juice 1.75L','orange juice',1,4.49],['Bell Peppers 3pk','bell peppers',1,3.49]]
+};
+const RECIPES = [
+  {name:'Spinach & Tomato Omelette', e:'🍳', time:15, uses:['Eggs','Baby Spinach','Tomatoes','Cheddar']},
+  {name:'Sheet-pan Chicken Fajitas', e:'🌮', time:30, uses:['Chicken Thighs','Bell Peppers','Avocado','Lemon']},
+  {name:'Strawberry Yogurt Parfait', e:'🍓', time:5,  uses:['Strawberries','Greek Yogurt']},
+  {name:'Cheesy Pasta Bake',         e:'🧀', time:25, uses:['Leftover Pasta','Cheddar','Tomatoes']},
+  {name:'Crunchy Garden Salad',      e:'🥗', time:10, uses:['Lettuce','Tomatoes','Carrots','Bell Peppers']},
+  {name:'Avocado Egg Toast',         e:'🥑', time:10, uses:['Avocado','Eggs','Lemon']},
+];
+const COUPONS = [
+  {item:'Orange Juice', deal:'$1.00 off', note:'1.75L carton', store:'Maple Market', ends:'Nov 22'},
+  {item:'Milk 2%', deal:'2 for $9', note:'2L jugs', store:'Northside Grocer', ends:'Nov 20'},
+  {item:'Chicken Thighs', deal:'20% off', note:'Family pack', store:'Maple Market', ends:'Nov 19'},
+  {item:'Strawberries', deal:'$3.49', note:'1lb clamshell', store:'Fresh Lane', ends:'Nov 21'},
+  {item:'Bread', deal:'$1.50 off', note:'Any whole-grain loaf', store:'Northside Grocer', ends:'Nov 23'},
+  {item:'Greek Yogurt', deal:'$1.25 off', note:'750g tub', store:'Fresh Lane', ends:'Nov 24'},
+];
+
+/* =========================================================
+   Store — the only place data changes.
+   Swap these methods for Firestore reads/writes later.
+   ========================================================= */
+const uid = () => Math.random().toString(36).slice(2,9);
+function mkItem(key, qty, by, daysLeft, price, ago=0){
+  const c = CATALOG[key];
+  return {id:uid(), key, name:c.name, emoji:c.e, cat:c.cat, zone:ZONE_OF[c.cat], qty, price:price||0, addedBy:by,
+          addedAt:Date.now()-ago*DAY, expiresAt:Date.now()+(daysLeft-0.5)*DAY};
+}
+function seed(){
+  return {
+    me:'yasmin', duplicatesCaught:0, scans:0,
+    items:[
+      mkItem('milk 2%',1,'kiara',1,5.49,5), mkItem('tomatoes',6,'yasmin',3,3.99,3), mkItem('lettuce',1,'mekaeda',4,2.49,2),
+      mkItem('eggs',2,'yasmin',9,4.29,10), mkItem('carrots',5,'mekaeda',11,2.99,3), mkItem('butter',1,'kiara',24,5.99,6),
+      mkItem('leftover pasta',1,'kiara',1,0,2), mkItem('avocado',2,'yasmin',2,3.98,3), mkItem('watermelon',1,'mekaeda',4,5.99,1),
+      mkItem('ketchup',1,'yasmin',80,3.49,20), mkItem('sparkling water',4,'kiara',100,4.99,4), mkItem('frozen peas',1,'mekaeda',90,2.79,15),
+      mkItem('ice cream',1,'kiara',45,6.49,8), mkItem('lemon',2,'yasmin',10,1.38,4),
+    ],
+    shopping:[
+      {id:uid(), name:'Orange Juice', by:'kiara', done:false},
+      {id:uid(), name:'Bread', by:'mekaeda', done:false},
+      {id:uid(), name:'Greek Yogurt', by:'yasmin', done:false},
+    ],
+    activity:[
+      {by:'kiara', text:'finished the <b>Orange Juice</b> and added it to the list', at:Date.now()-2*3600e3},
+      {by:'mekaeda', text:'added <b>Watermelon</b>', at:Date.now()-26*3600e3},
+      {by:'yasmin', text:'scanned a receipt and added <b>6 items</b>', at:Date.now()-3*DAY},
+    ],
+  };
+}
+const Store = {
+  s:null, subs:[],
+  key:'fridgi-v1',
+  load(){ try{ const raw = localStorage.getItem(this.key); if(raw){ this.s = JSON.parse(raw); return; } }catch(e){} this.s = seed(); },
+  save(){ try{ localStorage.setItem(this.key, JSON.stringify(this.s)); }catch(e){} this.subs.forEach(f=>f()); },
+  reset(){ this.s = seed(); this.save(); },
+  log(text){ this.s.activity.unshift({by:this.s.me, text, at:Date.now()}); this.s.activity = this.s.activity.slice(0,30); },
+  findByName(name){ return this.s.items.find(i=>i.name.toLowerCase()===name.toLowerCase()); },
+  addItems(list){
+    const ids=[]; let merged=0;
+    list.forEach(r=>{
+      const ex = this.findByName(r.name);
+      const exp = Date.now()+(r.days-0.5)*DAY;
+      if(ex){ ex.qty += r.qty; ex.expiresAt = Math.max(ex.expiresAt, exp); ids.push(ex.id); merged++; }
+      else{
+        const it = {id:uid(), key:r.key, name:r.name, emoji:r.e, cat:r.cat, zone:ZONE_OF[r.cat], qty:r.qty, price:r.price||0,
+                    addedBy:this.s.me, addedAt:Date.now(), expiresAt:exp};
+        this.s.items.push(it); ids.push(it.id);
+      }
+      const sl = this.s.shopping.find(x=>!x.done && x.name.toLowerCase()===r.name.toLowerCase());
+      if(sl) sl.done = true;
+    });
+    this.s.scans++;
+    this.log(`scanned a receipt and added <b>${list.length} item${list.length>1?'s':''}</b>`);
+    this.save(); return ids;
+  },
+  use(id, n=1){
+    const it = this.s.items.find(i=>i.id===id); if(!it) return;
+    it.qty -= n;
+    if(it.qty<=0){
+      this.s.items = this.s.items.filter(i=>i!==it);
+      this.log(`finished the <b>${it.name}</b> and added it to the list`);
+      if(!this.s.shopping.find(x=>!x.done && x.name===it.name)) this.s.shopping.unshift({id:uid(), name:it.name, by:this.s.me, done:false});
+    } else this.log(`used 1 <b>${it.name}</b>`);
+    this.save(); return it;
+  },
+  setQty(id, q){ const it=this.s.items.find(i=>i.id===id); if(!it) return; if(q<=0){ this.use(id, it.qty); return; } it.qty=q; this.save(); },
+  toss(id){ const it=this.s.items.find(i=>i.id===id); if(!it) return; this.s.items=this.s.items.filter(i=>i!==it); this.log(`threw out the <b>${it.name}</b>`); this.save(); },
+  addShop(name){ name=name.trim(); if(!name) return; this.s.shopping.unshift({id:uid(), name, by:this.s.me, done:false}); this.log(`added <b>${esc(name)}</b> to the shopping list`); this.save(); },
+  toggleShop(id){ const x=this.s.shopping.find(s=>s.id===id); if(x){ x.done=!x.done; this.save(); } },
+  setMe(p){ this.s.me=p; this.save(); },
+};
+
+/* ---------- helpers ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const daysLeft = it => Math.ceil((it.expiresAt-Date.now())/DAY);
+function expLabel(d){ return d<0?'Expired':d===0?'Today':d===1?'1 day':d+' days'; }
+function expCls(d){ return d<=1?'exp-red':d<=3?'exp-amb':'exp-grn'; }
+function ago(t){ const m=(Date.now()-t)/6e4; if(m<1) return 'now'; if(m<60) return Math.round(m)+'m'; const h=m/60; if(h<24) return Math.round(h)+'h'; return Math.round(h/24)+'d'; }
+function av(p,size){ const P=PEOPLE[p]; return `<span class="avatar" style="background:${P.color}${size?`;width:${size}px;height:${size}px`:''}">${P.name[0]}</span>`; }
+function guess(name){
+  const k = name.toLowerCase().trim();
+  if(CATALOG[k]) return {key:k, ...CATALOG[k]};
+  const keys = Object.keys(CATALOG).sort((a,b)=>b.length-a.length);
+  const hit = keys.find(c=>k.includes(c)) || keys.find(c=>k.length>3 && c.includes(k)) || keys.find(c=>c.length>4 && k.includes(c.replace(/s$/,'')));
+  if(hit) return {key:hit, ...CATALOG[hit], name: name.trim()};
+  return {key:null, name:name.trim(), e:'🛒', cat:'other', days:7, n:[0,0,0,0]};
+}
+let toastT;
+function toast(msg){ const t=$('#toast'); t.innerHTML=msg; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2400); }
+
+/* ---------- routing ---------- */
+const SCREENS = ['home','fridge','scan','inventory','household'];
+let current = 'home';
+function go(name){
+  if(!SCREENS.includes(name)) name='home';
+  current = name;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.id==='s-'+name));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.go===name));
+  try{ if(location.hash!=='#'+name) history.replaceState(null,'','#'+name); }catch(e){}
+  render();
+  if(name==='fridge') enterAR();
+  closeSheet();
+}
+document.addEventListener('click', e=>{
+  const g = e.target.closest('[data-go]');
+  if(g){ e.preventDefault(); go(g.dataset.go); }
+});
+window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(h && h!==current) go(h); });
+
+/* =========================================================
+   HOME
+   ========================================================= */
+function renderHome(){
+  const S = Store.s, me = PEOPLE[S.me];
+  const items = S.items;
+  const soon = items.filter(i=>daysLeft(i)<=3).sort((a,b)=>a.expiresAt-b.expiresAt);
+  const atRisk = soon.reduce((s,i)=>s+(i.price||0),0);
+  const hr = new Date().getHours();
+  const part = hr<12?'morning':hr<18?'afternoon':'evening';
+  const recs = scoreRecipes().slice(0,3);
+  const names = new Set(items.map(i=>i.name));
+  const wanted = new Set(S.shopping.filter(x=>!x.done).map(x=>x.name));
+  const coupons = COUPONS.filter(c=>wanted.has(c.item) || (names.has(c.item) && items.find(i=>i.name===c.item).qty<=1))
+                  .concat(COUPONS.filter(c=>!wanted.has(c.item) && !names.has(c.item))).slice(0,4);
+  $('#s-home').innerHTML = `
+    <div class="home-top">
+      <div class="wordmark">Fridgi</div>
+      <button class="who" id="whoBtn">${av(S.me,24)} ${me.name} ▾</button>
+    </div>
+    <div class="greet">Good ${part}, ${me.name}. Here's what's in the shared fridge.</div>
+    ${accountCard()}
+    <div class="stats">
+      <div class="stat"><b>${items.reduce((s,i)=>s+i.qty,0)}</b><span>items in fridge</span></div>
+      <div class="stat"><b style="color:${soon.length?'#ff8b77':'inherit'}">${soon.length}</b><span>expiring in 3 days</span></div>
+      <div class="stat"><b>$${atRisk.toFixed(0)}</b><span>of food at risk</span></div>
+    </div>
+    <button class="btn block" data-go="fridge" style="margin-top:14px">Open AR Fridge →</button>
+
+    <div class="h-sec">Use it soon <small>${soon.length?'Expiry alerts':''}</small></div>
+    ${soon.length? `<div class="hscroll">${soon.map(i=>{const d=daysLeft(i);return `
+      <div class="soon"><div class="em">${i.emoji}</div><b>${esc(i.name)}</b>
+        <span class="pill ${expCls(d)}">${expLabel(d)}</span>
+        <button class="use" data-use="${i.id}">Used it</button></div>`}).join('')}</div>`
+      : `<div class="card muted" style="font-size:13px">Nothing is about to expire. 🎉</div>`}
+
+    <div class="h-sec">Cook with what's expiring <small>Recipes</small></div>
+    <div class="card" style="padding:4px 14px">
+      ${recs.map(r=>`<button class="recipe" data-recipe="${r.name}"><span class="em">${r.e}</span>
+        <span><b>${r.name}</b><small>${r.time} min · you have ${r.have}/${r.uses.length}${r.urgent?` · uses <span style="color:#ff8b77">${r.urgent} expiring</span>`:''}</small></span></button>`).join('')}
+    </div>
+
+    <div class="h-sec">Coupons for your list <small>Demo offers</small></div>
+    <div class="hscroll">${coupons.map(c=>`
+      <div class="coupon"><div class="deal">${c.deal}</div><div class="it">${c.item} <span class="muted" style="font-weight:500">· ${c.note}</span></div>
+      <div class="st">${c.store} · ends ${c.ends}${wanted.has(c.item)?' · <span style="color:var(--mint)">on your list</span>':''}</div></div>`).join('')}</div>
+
+    <div class="h-sec">Fridge activity <small>Shared with 3</small></div>
+    <ul class="feed">${S.activity.slice(0,5).map(a=>`<li>${av(a.by)}<span><b>${PEOPLE[a.by].name}</b> ${a.text}</span><time>${ago(a.at)}</time></li>`).join('')}</ul>
+  `;
+}
+function scoreRecipes(){
+  const have = new Map(Store.s.items.map(i=>[i.name,i]));
+  return RECIPES.map(r=>{
+    const h = r.uses.filter(u=>have.has(u));
+    const urgent = h.filter(u=>daysLeft(have.get(u))<=3).length;
+    return {...r, have:h.length, urgent, missing:r.uses.filter(u=>!have.has(u))};
+  }).sort((a,b)=>(b.urgent-a.urgent)||(b.have/b.uses.length - a.have/a.uses.length));
+}
+$('#s-home').addEventListener('click', e=>{
+  const u=e.target.closest('[data-use]'); if(u){ const it=Store.use(u.dataset.use); if(it) toast(`${it.emoji} ${PEOPLE[Store.s.me].name} used ${it.name}${it.qty<=0?' · added to list':''}`); return; }
+  const r=e.target.closest('[data-recipe]'); if(r){ openRecipe(r.dataset.recipe); return; }
+  if(e.target.closest('#whoBtn')) openWho();
+  const a=e.target.closest('[data-auth]'); if(a) authAction(a.dataset.auth);
+});
+function accountCard(){
+  if(!FridgiHooks.live) return `<div class="pill" style="margin-top:10px">● Demo data</div>`;
+  const u=FridgiHooks.user;
+  if(!u) return `<div class="card" style="margin-top:14px"><b style="font-size:14px">Connect your Firebase fridge</b><p class="muted" style="font-size:12px;margin:4px 0 10px">Sign in to load your real items and scan real receipts.</p>
+    <div style="display:flex;gap:8px"><button class="btn sm" data-auth="google">Sign in with Google</button><button class="btn sm line" data-auth="guest">Try as guest</button></div></div>`;
+  return `<div style="margin-top:10px;display:flex;gap:8px;align-items:center"><span class="pill exp-grn">● Live · Firebase</span><span class="muted" style="font-size:11.5px">${esc(u.isAnonymous?'Guest':(u.displayName||u.email||'Signed in'))}</span><button class="muted" style="font-size:11.5px;text-decoration:underline;margin-left:auto" data-auth="out">Sign out</button></div>`;
+}
+async function authAction(kind){
+  try{ if(kind==='google') await FridgiHooks.signInGoogle(); else if(kind==='guest') await FridgiHooks.signInGuest(); else await FridgiHooks.signOut(); }
+  catch(err){ toast('⚠︎ Sign-in failed: '+(err.code||err.message)); }
+}
+function openWho(){
+  openSheet(`<h2 style="font-size:22px;font-weight:900">Who's using Fridgi?</h2>
+    <p class="muted" style="font-size:13px;margin-top:4px">Switch roommates to demo the shared fridge. Every action is tagged with who did it.</p>
+    <div class="members">${Object.keys(PEOPLE).map(p=>`<button class="member ${p===Store.s.me?'me':''}" data-me="${p}">${av(p)}<b>${PEOPLE[p].name}</b><small>${p===Store.s.me?'current':'switch'}</small></button>`).join('')}</div>`);
+}
+function openRecipe(name){
+  const r = scoreRecipes().find(x=>x.name===name); if(!r) return;
+  const have = new Map(Store.s.items.map(i=>[i.name,i]));
+  openSheet(`<div class="sh-head"><div class="em">${r.e}</div><div><h2>${r.name}</h2><div class="muted" style="font-size:13px;margin-top:6px">${r.time} min · ${r.have}/${r.uses.length} ingredients at home</div></div></div>
+    <div class="h-sec" style="margin-top:18px">Ingredients</div>
+    <ul class="shop">${r.uses.map(u=>{const it=have.get(u);const d=it?daysLeft(it):null;return `<li class="${it?'':'miss'}"><span style="font-size:20px">${it?it.emoji:'○'}</span><span>${u}</span>
+      ${it?`<small><span class="pill ${expCls(d)}">${expLabel(d)}</span></small>`:`<small style="color:#ffcd6e">missing</small>`}</li>`}).join('')}</ul>
+    <div class="sh-actions">
+      <button class="btn line" data-close>Close</button>
+      <button class="btn" ${r.missing.length?`data-addmissing="${esc(r.missing.join('|'))}"`:'data-cook="'+esc(r.name)+'"'}>${r.missing.length?`Add ${r.missing.length} to list`:'Cook it'}</button>
+    </div>`);
+}
+
+/* =========================================================
+   AR FRIDGE
+   ========================================================= */
+const fridgeEl = $('#fridge'), arEl = $('#ar'), anchorEl = $('#anchor');
+let ry=-28, rx=12, sc=1, placed=false, focusOn=false, newIds=new Set();
+function fitScale(){ const h=arEl.clientHeight||700, w=arEl.clientWidth||390; return Math.min(.86, (h-240)/420, (w-60)/330); }
+function applyRot(){ fridgeEl.style.setProperty('--ry',ry); fridgeEl.style.setProperty('--rx',rx); fridgeEl.style.setProperty('--s',(sc*fitScale()).toFixed(3)); }
+function enterAR(){
+  applyRot();
+  if(!placed){
+    arEl.classList.add('detecting');
+    setTimeout(()=>{ arEl.classList.remove('detecting'); anchorEl.classList.remove('drop'); void anchorEl.offsetWidth; anchorEl.classList.add('drop'); placed=true;
+      if(newIds.size) setTimeout(()=>setDoor('main',true),500);
+    },1500);
+  } else if(newIds.size){ setTimeout(()=>setDoor('main',true),250); }
+}
+function setDoor(which, open){
+  const d = which==='frz'?$('#doorFrz'):$('#doorMain');
+  d.classList.toggle('opened', open);
+  const anyOpen = $('#doorMain').classList.contains('opened') || $('#doorFrz').classList.contains('opened');
+  fridgeEl.classList.toggle('open', anyOpen);
+  $('#openAllChip').textContent = anyOpen ? 'Close fridge' : 'Open fridge';
+  if(open && Math.abs(ry)<10){ ry=-30; applyRot(); }
+}
+function zoneLayout(items, floorY){
+  // up to 4 per row; front row first, then back, then middle
+  const rowsZ = [38, -32, 2];
+  const per = 4, out=[];
+  const innerL=26, innerW= 210-52;
+  items.forEach((it,i)=>{
+    const r = Math.min(2, Math.floor(i/per)), inRow = Math.min(per, items.length - r*per), k = i - r*per;
+    const shift = r===1 ? innerW/inRow/3 : 0;
+    out.push({it, x: innerL + innerW/inRow*(k+0.5) + shift, y: floorY - (r===1?1:0), z: rowsZ[r]});
+  });
+  return out;
+}
+function itemHTML(it, x, y, z, idx){
+  const d=daysLeft(it), isNew=newIds.has(it.id);
+  return `<div class="item ${d<=2?'urgent':''} ${isNew?'new':''}" data-id="${it.id}" title="${esc(it.name)}"
+    style="transform:translate3d(${x}px,${y}px,${z}px) rotateY(calc(var(--ry) * -1deg)) rotateX(calc(var(--rx) * -1deg));--d:${isNew?(0.15+idx*0.12):0}s">
+    <div class="pop">${it.emoji}</div>${it.qty>1?`<span class="qty">${it.qty}</span>`:''}<span class="ring"></span></div>`;
+}
+function renderFridge(){
+  const S=Store.s, by={freezer:[],top:[],middle:[],crisper:[],door:[]};
+  S.items.forEach(i=>by[i.zone]?by[i.zone].push(i):by.middle.push(i));
+  const floors = {freezer:96, top:172, middle:250, crisper:344};
+  let html='', n=0;
+  for(const z of ['freezer','top','middle','crisper']){
+    const list = by[z].slice(0,12);
+    zoneLayout(list, floors[z]).forEach(p=>{ html += itemHTML(p.it,p.x,p.y,p.z,n++); });
+  }
+  $('#zones').innerHTML = html;
+  const bins = [[],[],[]]; by.door.forEach((it,i)=>bins[i%3].push(it));
+  $('#doorInner').innerHTML = bins.map(b=>`<div class="bin">${b.map(it=>{const d=daysLeft(it);return `<span class="item2d ${d<=2?'urgent':''}" data-id="${it.id}" title="${esc(it.name)}">${it.emoji}${it.qty>1?`<span class="qty">${it.qty}</span>`:''}<span class="ring"></span></span>`}).join('')}</div>`).join('');
+  $('#frzInner').innerHTML = `<div class="bin" style="border-bottom-color:#cfe6ef;min-height:60px;opacity:.8"><span style="font-size:11px;color:#6a8a96;font-weight:700">❄︎ −18°C</span></div>`;
+  const total = S.items.length, urgent = S.items.filter(i=>daysLeft(i)<=2).length;
+  $('#arPill').innerHTML = `${urgent?'<span class="dot"></span>':''}${total} items · ${urgent} need attention`;
+  $('#doorBadge').textContent = urgent ? `⚠︎ ${urgent} expiring` : '✓ all fresh';
+  fridgeEl.classList.toggle('focus', focusOn);
+}
+// drag / zoom / tap
+let drag=null, dragged=false;
+arEl.addEventListener('pointerdown', e=>{
+  if(e.target.closest('.ar-top,.ar-bottom,.ar-chips')) return;
+  drag={x:e.clientX,y:e.clientY,ry,rx}; dragged=false;
+});
+window.addEventListener('pointermove', e=>{
+  if(!drag) return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  if(Math.abs(dx)+Math.abs(dy)>6){ dragged=true; arEl.classList.add('dragging'); }
+  if(dragged){ ry=Math.max(-80,Math.min(80,drag.ry+dx*0.4)); rx=Math.max(-2,Math.min(30,drag.rx+dy*0.15)); applyRot(); }
+});
+window.addEventListener('pointerup', ()=>{ drag=null; arEl.classList.remove('dragging'); setTimeout(()=>dragged=false,0); });
+arEl.addEventListener('wheel', e=>{ e.preventDefault(); sc=Math.max(.6,Math.min(1.45, sc - e.deltaY*0.0012)); applyRot(); }, {passive:false});
+// pinch
+let pinch=null; const pts=new Map();
+arEl.addEventListener('pointerdown',e=>{pts.set(e.pointerId,[e.clientX,e.clientY]); if(pts.size===2){const [a,b]=[...pts.values()]; pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),sc}; drag=null;}});
+arEl.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)) return; pts.set(e.pointerId,[e.clientX,e.clientY]); if(pinch&&pts.size===2){const [a,b]=[...pts.values()]; sc=Math.max(.6,Math.min(1.45,pinch.sc*Math.hypot(a[0]-b[0],a[1]-b[1])/pinch.d)); applyRot(); dragged=true;}});
+['pointerup','pointercancel'].forEach(t=>arEl.addEventListener(t,e=>{pts.delete(e.pointerId); if(pts.size<2) pinch=null;}));
+arEl.addEventListener('click', e=>{
+  if(dragged) return;
+  const it = e.target.closest('[data-id]');
+  if(it && (it.closest('.door') ? it.closest('.door').classList.contains('opened') : true)){ e.stopPropagation(); openItem(it.dataset.id); return; }
+  const door = e.target.closest('.door');
+  if(door){ setDoor(door.dataset.door, !door.classList.contains('opened')); }
+});
+$('#focusChip').addEventListener('click',()=>{ focusOn=!focusOn; $('#focusChip').classList.toggle('on',focusOn); renderFridge(); if(focusOn){ setDoor('main',true); setDoor('frz',true);} });
+$('#openAllChip').addEventListener('click',()=>{ const open = !fridgeEl.classList.contains('open'); setDoor('main',open); setDoor('frz',open); });
+$('#roomFile').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const url=URL.createObjectURL(f); const b=$('#backdrop'); b.style.backgroundImage=`url(${url})`; b.innerHTML='';
+  placed=false; enterAR(); toast('📷 Room photo set as AR backdrop');
+});
+window.addEventListener('resize', applyRot);
+
+/* =========================================================
+   ITEM SHEET
+   ========================================================= */
+function openItem(id){
+  const it = Store.s.items.find(i=>i.id===id); if(!it) return;
+  const d = daysLeft(it), life = Math.max(1,(it.expiresAt-it.addedAt)/DAY), pct = Math.max(0,Math.min(100, d/life*100));
+  const n = (CATALOG[it.key]||{n:[0,0,0,0]}).n;
+  const recs = RECIPES.filter(r=>r.uses.includes(it.name));
+  openSheet(`
+    <div class="sh-head"><div class="em">${it.emoji}</div><div style="flex:1"><h2>${esc(it.name)}</h2>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="pill ${expCls(d)}">${d<=2?'⚠︎ ':''}${expLabel(d)} left</span><span class="pill">${CATS[it.cat]||it.cat}</span></div></div>
+      <div class="stepper"><button data-q="-1">−</button><span>${it.qty}</span><button data-q="1">+</button></div></div>
+    <div class="kv">
+      <div><small>Freshness</small><b>${expLabel(d)}</b><div class="bar"><i style="width:${pct}%;background:${d<=1?'var(--tomato)':d<=3?'var(--amber)':'var(--leaf)'}"></i></div></div>
+      <div><small>Where</small><b>${ZONE_NAME[it.zone]}</b></div>
+      <div><small>Added by</small><b style="display:flex;gap:6px;align-items:center">${av(it.addedBy,20)} ${PEOPLE[it.addedBy].name}</b></div>
+      <div><small>Paid</small><b>${it.price?'$'+it.price.toFixed(2):'—'}</b> <small style="display:inline">· ${ago(it.addedAt)} ago</small></div>
+    </div>
+    <div class="h-sec" style="margin-top:16px">Nutrition <small>per serving</small></div>
+    <div class="nut"><div><b>${n[0]}</b><small>kcal</small></div><div><b>${n[1]}g</b><small>protein</small></div><div><b>${n[2]}g</b><small>carbs</small></div><div><b>${n[3]}g</b><small>fat</small></div></div>
+    ${recs.length?`<div class="h-sec" style="margin-top:16px">Use it in</div>${recs.map(r=>`<button class="recipe" data-recipe="${r.name}"><span class="em">${r.e}</span><span><b>${r.name}</b><small>${r.time} min</small></span></button>`).join('')}`:''}
+    <div class="sh-actions">
+      <button class="btn line" data-toss="${it.id}">Throw out</button>
+      <button class="btn" data-useitem="${it.id}">Used one</button>
+    </div>`, it.id);
+}
+let sheetItem=null;
+function openSheet(html, itemId=null){ sheetItem=itemId; $('#sheet').innerHTML='<div class="grab"></div>'+html; $('#sheet').classList.add('on'); $('#scrim').classList.add('on'); }
+function closeSheet(){ sheetItem=null; $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); }
+$('#scrim').addEventListener('click', closeSheet);
+$('#sheet').addEventListener('click', e=>{
+  const t=e.target;
+  if(t.closest('[data-close]')) return closeSheet();
+  const q=t.closest('[data-q]'); if(q&&sheetItem){ const it=Store.s.items.find(i=>i.id===sheetItem); if(!it) return; const nq=it.qty+(+q.dataset.q); Store.setQty(sheetItem,nq); if(nq<=0){closeSheet(); toast(`${it.emoji} ${it.name} finished · added to list`);} else openItem(sheetItem); return; }
+  const u=t.closest('[data-useitem]'); if(u){ const it=Store.use(u.dataset.useitem); closeSheet(); if(it) toast(`${it.emoji} Used 1 ${it.name}${it.qty<=0?' · added to list':''}`); return; }
+  const x=t.closest('[data-toss]'); if(x){ const it=Store.s.items.find(i=>i.id===x.dataset.toss); Store.toss(x.dataset.toss); closeSheet(); if(it) toast(`🗑 ${it.name} thrown out`); return; }
+  const r=t.closest('[data-recipe]'); if(r) return openRecipe(r.dataset.recipe);
+  const m=t.closest('[data-me]'); if(m){ Store.setMe(m.dataset.me); closeSheet(); toast(`Now using Fridgi as ${PEOPLE[m.dataset.me].name}`); return; }
+  const am=t.closest('[data-addmissing]'); if(am){ const list=am.dataset.addmissing.split('|'); list.forEach(n=>{ if(!Store.s.shopping.find(s=>!s.done&&s.name===n)) Store.s.shopping.unshift({id:uid(),name:n,by:Store.s.me,done:false}); }); Store.log(`added <b>${list.join(', ')}</b> to the list`); Store.save(); closeSheet(); toast(`🛒 Added ${list.length} to the shopping list`); return; }
+  const ck=t.closest('[data-cook]'); if(ck){ closeSheet(); toast('👩‍🍳 Enjoy! Mark ingredients as used from the fridge.'); }
+});
+
+/* =========================================================
+   SCAN  (start → scanning → review)
+   ========================================================= */
+let scan = {stage:'start', photo:null, review:[], shown:0};
+function startScan(photoUrl){
+  scan = {stage:'scanning', photo:photoUrl, review:[], shown:0};
+  render();
+  const lines = SAMPLE_RECEIPT.lines;
+  let i=0;
+  const tick = ()=>{
+    if(current!=='scan' || scan.stage!=='scanning') return;
+    if(i<lines.length){
+      const [label,key,qty,price] = lines[i];
+      const c = CATALOG[key];
+      scan.review.push({tmp:uid(), key, name:c.name, e:c.e, cat:c.cat, days:c.days, qty, price});
+      scan.shown = ++i; renderScan(); setTimeout(tick, 330);
+    } else {
+      setTimeout(()=>{ scan.stage='review'; renderScan(); }, 600);
+    }
+  };
+  setTimeout(tick, 900);
+}
+async function liveScan(file){
+  scan = {stage:'scanning', photo:URL.createObjectURL(file), review:[], shown:0, live:true, total:0};
+  renderScan();
+  try{
+    const res = await FridgiHooks.scanPhoto(file);
+    const items = (res && res.items) || [];
+    if(!items.length){ scan = {stage:'review', review:[], shown:0, error:"Gemini couldn't find any food items in that photo. Try a clearer shot, or add items by hand below."}; return renderScan(); }
+    scan.total = items.length;
+    for(const it of items){
+      if(scan.stage!=='scanning') return;
+      const g = guess(it.name||'Item');
+      const cat = CATS[it.category] ? it.category : (g.key ? g.cat : 'other');
+      scan.review.push({tmp:uid(), key:g.key, name:it.name, e:g.key?g.e:CAT_EMOJI[cat], cat,
+        days:Math.max(1, Math.round(it.shelfLifeDays || g.days || 7)), qty:Math.max(1, Math.round(it.quantity||1)), price:+it.price||0});
+      scan.shown++; renderScan(); await sleep(260);
+    }
+    await sleep(500); scan.stage='review'; renderScan();
+  }catch(err){
+    scan = {stage:'review', review:[], shown:0, error: err.friendly || "The receipt reader didn't respond. Wait a moment and try the photo again, or add items by hand below."};
+    renderScan();
+  }
+}
+function renderScan(){
+  const el = $('#s-scan');
+  if(scan.stage==='start'){
+    el.innerHTML = `
+      <div class="h-big">Scan<br>a receipt</div>
+      <div class="scan-hero">
+        <div class="hand">One scan fills your fridge</div>
+        <p>Point your camera at the receipt. AI reads each line, sorts it into items, and puts each one on the right shelf.</p>
+        <div class="mini-receipt">GROCERY RECEIPT<br>Apple ........ 3.49<br>Milk ......... 4.29<br>Bread ........ 2.99<br>- - - - - - - -<br>Total ....... 10.77</div>
+      </div>
+      <div class="opts">
+        <label class="opt"><span class="ic">📷</span><span><b>Take or upload a photo</b><small>Snap your receipt (opens camera on phones)</small></span>
+          <input type="file" accept="image/*" capture="environment" class="hidden-file" id="rcptFile"></label>
+        <button class="opt" id="sampleBtn"><span class="ic">🧾</span><span><b>Use sample receipt</b><small>Maple Market · 10 items · best for demos</small></span></button>
+        <button class="opt" id="manualBtn"><span class="ic">✍️</span><span><b>Type items in manually</b><small>No receipt? Add groceries by name</small></span></button>
+      </div>`;
+    return;
+  }
+  if(scan.stage==='scanning'){
+    const R = SAMPLE_RECEIPT;
+    const receipt = scan.photo
+      ? `<div class="receipt photo"><img src="${scan.photo}" alt="Receipt photo"><div class="beam"></div></div>`
+      : `<div class="receipt"><div class="c"><b>${R.store}</b><br>${R.addr}<br>${R.date}</div><hr>
+          ${R.lines.map((l,i)=>`<div class="ln ${i<scan.shown?'hit':''}"><span>${l[0]}</span><span>${l[3].toFixed(2)}</span></div>`).join('')}
+          <hr><div class="ln"><b>TOTAL</b><b>${R.lines.reduce((s,l)=>s+l[3],0).toFixed(2)}</b></div><div class="c" style="margin-top:6px">THANK YOU!</div><div class="beam"></div></div>`;
+    el.innerHTML = `
+      <div class="h-big" style="font-size:36px">Reading<br>receipt…</div>
+      <div class="scanning">
+        <div class="rframe"><span class="vfc"></span><span class="vfc"></span><span class="vfc"></span><span class="vfc"></span>${receipt}</div>
+        <div class="tags">${scan.review.map(r=>`<div class="tag">${r.e} ${esc(r.name.length>13?r.name.slice(0,12)+'…':r.name)}<span class="ck">✓</span></div>`).join('')}</div>
+      </div>
+      <div class="ai-status"><span class="spin"></span> ${scan.live ? (scan.total ? `Sorting ${scan.shown} of ${scan.total} items…` : 'Gemini is reading your receipt…') : `AI is sorting ${scan.shown} of ${R.lines.length} items into categories…`}</div>
+      ${scan.photo && !scan.live?`<div class="banner">Prototype mode: your photo is shown, but the items come from a demo parse. Connect your Firebase scan function to read real receipts.</div>`:''}`;
+    return;
+  }
+  // review
+  const list = scan.review;
+  const total = list.reduce((s,r)=>s+(r.price||0)*1,0);
+  const dups = list.filter(r=>Store.findByName(r.name));
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div class="h-big" style="font-size:36px">Review<br>items</div>
+      <button class="btn line sm" id="rescan">↺ Rescan</button>
+    </div>
+    <p class="muted" style="font-size:13px;margin-top:8px">AI sorted <b style="color:var(--text)">${list.length} items</b> and estimated when each expires. Fix anything it got wrong before storing.</p>
+    ${scan.error?`<div class="banner" style="background:rgba(229,83,61,.12);color:#ffb3a6;border-color:rgba(229,83,61,.35)">${esc(scan.error)}</div>`:''}
+    ${dups.length?`<div class="banner" style="background:rgba(242,179,61,.12)">⚠︎ You already have <b>${dups.map(d=>d.name).join(', ')}</b> at home. Next time Fridgi would warn you <i>before</i> you buy.</div>`:''}
+    <div id="rvList">${list.map(r=>{const ex=Store.findByName(r.name);return `
+      <div class="rv" data-tmp="${r.tmp}">
+        <div class="em">${r.e}</div>
+        <div><input class="nm" value="${esc(r.name)}" data-f="name">
+          <div class="sub"><select data-f="cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${k===r.cat?'selected':''}>${v}</option>`).join('')}</select>
+          <span class="pill ${expCls(r.days)}">~${expLabel(r.days)}</span>
+          ${ex?`<span class="dup">Have ${ex.qty} already</span>`:''}</div></div>
+        <div style="display:flex;align-items:center;gap:4px"><div class="stepper"><button data-rq="-1">−</button><span>${r.qty}</span><button data-rq="1">+</button></div><button class="x" data-rm title="Remove">×</button></div>
+      </div>`}).join('')}</div>
+    <form class="addrow" id="addForm"><input id="addInput" placeholder="Add an item, e.g. Lemon" autocomplete="off"><button class="btn sm" type="submit">Add</button></form>
+    <div class="sticky-foot">
+      <button class="btn block" id="storeBtn" ${list.length?'':'disabled style="opacity:.5"'}>Store ${list.length} in Fridge ${total?`· $${total.toFixed(2)}`:''} →</button>
+    </div>`;
+}
+$('#s-scan').addEventListener('click', e=>{
+  const t=e.target;
+  if(t.closest('#sampleBtn')) return startScan(null);
+  if(t.closest('#manualBtn')){ scan={stage:'review',photo:null,review:[],shown:0}; renderScan(); setTimeout(()=>$('#addInput')&&$('#addInput').focus(),50); return; }
+  if(t.closest('#rescan')){ scan={stage:'start',review:[]}; return renderScan(); }
+  const row=t.closest('.rv');
+  if(row){
+    const r=scan.review.find(x=>x.tmp===row.dataset.tmp);
+    if(t.closest('[data-rq]')){ r.qty=Math.max(1,r.qty+(+t.closest('[data-rq]').dataset.rq)); return renderScan(); }
+    if(t.closest('[data-rm]')){ scan.review=scan.review.filter(x=>x!==r); return renderScan(); }
+  }
+  if(t.closest('#storeBtn') && scan.review.length){
+    const ids = Store.addItems(scan.review);
+    const caught = scan.review.filter(r=>Store.s.items.find(i=>i.name===r.name && i.addedBy!==Store.s.me)).length;
+    newIds = new Set(ids);
+    scan={stage:'start',review:[]};
+    go('fridge');
+    toast(`✨ ${ids.length} items stored in your fridge`);
+    setTimeout(()=>{ newIds=new Set(); }, 4000);
+  }
+});
+$('#s-scan').addEventListener('change', e=>{
+  if(e.target.id==='rcptFile'){ const f=e.target.files[0]; if(!f) return; if(FridgiHooks.scanPhoto && FridgiHooks.user) liveScan(f); else startScan(URL.createObjectURL(f)); return; }
+  const row=e.target.closest('.rv'); if(!row) return;
+  const r=scan.review.find(x=>x.tmp===row.dataset.tmp);
+  if(e.target.dataset.f==='name'){ const g=guess(e.target.value); r.name=e.target.value.trim()||r.name; if(g.key){ r.e=g.e; r.key=g.key; } renderScan(); }
+  if(e.target.dataset.f==='cat'){ r.cat=e.target.value; renderScan(); }
+});
+$('#s-scan').addEventListener('submit', e=>{
+  e.preventDefault(); const v=$('#addInput').value.trim(); if(!v) return;
+  const g=guess(v); scan.review.push({tmp:uid(), key:g.key, name:g.key?CATALOG[g.key].name:g.name, e:g.e, cat:g.cat, days:g.days, qty:1, price:0});
+  renderScan(); $('#addInput').focus();
+});
+
+/* =========================================================
+   INVENTORY
+   ========================================================= */
+let invFilter='all', invQuery='';
+function renderInventory(){
+  const el=$('#s-inventory');
+  if(!el.dataset.built){
+    el.innerHTML = `<div class="h-big">Inventory</div>
+      <input class="search" id="invSearch" placeholder="Search your fridge…" autocomplete="off">
+      <div class="chips" id="invChips"></div><div class="inv" id="invList"></div>`;
+    el.dataset.built='1';
+    $('#invSearch').addEventListener('input',e=>{invQuery=e.target.value.toLowerCase(); renderInventory();});
+  }
+  const items = Store.s.items;
+  const counts = {}; items.forEach(i=>counts[i.cat]=(counts[i.cat]||0)+1);
+  $('#invChips').innerHTML = [['all','All',items.length],['soon','⚠︎ Expiring',items.filter(i=>daysLeft(i)<=3).length], ...Object.entries(CATS).filter(([k])=>counts[k]).map(([k,v])=>[k,v,counts[k]])]
+    .map(([k,v,c])=>`<button class="chip ${invFilter===k?'on':''}" data-f="${k}">${v} ${c}</button>`).join('');
+  let list = items.filter(i=> invFilter==='all' || (invFilter==='soon'?daysLeft(i)<=3:i.cat===invFilter))
+                  .filter(i=>!invQuery || i.name.toLowerCase().includes(invQuery))
+                  .sort((a,b)=>a.expiresAt-b.expiresAt);
+  $('#invList').innerHTML = list.length ? list.map(i=>{const d=daysLeft(i);return `
+    <div class="row" data-open="${i.id}"><div class="em">${i.emoji}</div>
+      <div class="mid"><b>${esc(i.name)}</b><small>${i.qty} · ${ZONE_NAME[i.zone]} · by ${PEOPLE[i.addedBy].name}</small></div>
+      <span class="pill ${expCls(d)}">${expLabel(d)}</span></div>`}).join('')
+    : `<div class="empty">Nothing here. <br><br><button class="btn sm" data-go="scan">Scan a receipt</button></div>`;
+}
+$('#s-inventory').addEventListener('click',e=>{
+  const c=e.target.closest('[data-f]'); if(c){ invFilter=c.dataset.f; renderInventory(); return; }
+  const r=e.target.closest('[data-open]'); if(r) openItem(r.dataset.open);
+});
+
+/* =========================================================
+   HOUSEHOLD
+   ========================================================= */
+function renderHousehold(){
+  const S=Store.s;
+  const added = {}; S.items.forEach(i=>added[i.addedBy]=(added[i.addedBy]||0)+i.qty);
+  const open = S.shopping.filter(x=>!x.done), done=S.shopping.filter(x=>x.done).slice(0,5);
+  $('#s-household').innerHTML = `
+    <div class="h-big">Household</div>
+    <p class="muted" style="font-size:13px;margin-top:8px">Everyone sees the same fridge, so nobody buys a duplicate and everyone knows who finished the milk.</p>
+    <div class="members">${Object.keys(PEOPLE).map(p=>`<button class="member ${p===S.me?'me':''}" data-me="${p}">${av(p)}<b>${PEOPLE[p].name}${p===S.me?' (you)':''}</b><small>${added[p]||0} items added</small></button>`).join('')}</div>
+    <div class="h-sec">Shopping list <small>${open.length} to buy</small></div>
+    <form class="addrow" id="shopForm" style="margin-top:0"><input id="shopInput" placeholder="Add to the shared list…" autocomplete="off"><button class="btn sm">Add</button></form>
+    <ul class="shop">${open.map(x=>`<li data-sid="${x.id}"><span class="cb"></span><span>${esc(x.name)}</span><small>${PEOPLE[x.by].name}</small></li>`).join('')}
+      ${done.map(x=>`<li class="done" data-sid="${x.id}"><span class="cb">✓</span><span>${esc(x.name)}</span><small>bought</small></li>`).join('')}</ul>
+    <div class="h-sec">Activity</div>
+    <ul class="feed">${S.activity.slice(0,12).map(a=>`<li>${av(a.by)}<span><b>${PEOPLE[a.by].name}</b> ${a.text}</span><time>${ago(a.at)}</time></li>`).join('')}</ul>`;
+}
+$('#s-household').addEventListener('click',e=>{
+  const m=e.target.closest('[data-me]'); if(m){ Store.setMe(m.dataset.me); toast(`Now using Fridgi as ${PEOPLE[m.dataset.me].name}`); return; }
+  const li=e.target.closest('[data-sid]'); if(li) Store.toggleShop(li.dataset.sid);
+});
+$('#s-household').addEventListener('submit',e=>{ e.preventDefault(); const v=$('#shopInput').value; Store.addShop(v); setTimeout(()=>$('#shopInput')&&$('#shopInput').focus(),0); });
+
+/* ---------- render ---------- */
+function render(){
+  if(current==='home') renderHome();
+  if(current==='scan') renderScan();
+  if(current==='inventory') renderInventory();
+  if(current==='household') renderHousehold();
+  renderFridge();
+}
+Store.load();
+Store.subs.push(()=>{ render(); if(sheetItem && !Store.s.items.find(i=>i.id===sheetItem)) closeSheet(); });
+$('#resetBtn').addEventListener('click',()=>{ Store.reset(); placed=false; setDoor('main',false); setDoor('frz',false); toast('Demo data reset'); go('home'); });
+go(SCREENS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home');
+</script>
+
+<!-- =========================================================
+     Firebase live mode. Only runs when this page is served by
+     Firebase Hosting (fridgiprototype.web.app), which provides
+     /__/firebase/init.json. Anywhere else it stays in demo mode.
+     ========================================================= -->
+<script type="module">
+(async () => {
+  let cfg = null;
+  try { const r = await fetch('/__/firebase/init.json'); if (r.ok) cfg = await r.json(); } catch (e) {}
+  if (!cfg || !cfg.projectId) return;               // not on Firebase Hosting → demo mode
+  const V = '12.0.0', B = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [{ initializeApp }, A, F, AI] = await Promise.all([
+    import(B + 'firebase-app.js'), import(B + 'firebase-auth.js'),
+    import(B + 'firebase-firestore.js'), import(B + 'firebase-ai.js'),
+  ]);
+  const app = initializeApp(cfg);
+  const auth = A.getAuth(app), db = F.getFirestore(app);
+  const { collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, Timestamp, serverTimestamp } = F;
+
+  /* ---- Gemini receipt reader (same approach as the team's scanner) ---- */
+  const ai = AI.getAI(app, { backend: new AI.GoogleAIBackend() });
+  const S = AI.Schema;
+  const REMOTE_CATS = ['produce','dairy','meat','bakery','frozen','pantry','drinks','other'];
+  const schema = S.object({
+    properties: {
+      store: S.string(),
+      items: S.array({ items: S.object({
+        properties: { name: S.string(), quantity: S.number(), category: S.enumString({ enum: REMOTE_CATS }),
+                      price: S.number(), shelfLifeDays: S.number() },
+        optionalProperties: ['price'] }) }),
+    },
+    optionalProperties: ['store'],
+  });
+  const PROMPT = `This is a photo of a grocery receipt. List only the food and drink items on it.
+For each item give:
+- name: a short, readable name (expand store abbreviations, e.g. "ORG BNNA" -> "Organic bananas")
+- quantity: how many were bought (1 if unclear)
+- category: the best matching category
+- price: the line price if it is readable
+- shelfLifeDays: a typical number of days the item stays good at home once bought
+Skip non-food items, taxes, totals, discounts and payment lines.
+If the image is not a receipt, return an empty items list.`;
+  const models = ['gemini-2.5-flash-lite', 'gemini-flash-lite-latest'].map(m =>
+    AI.getGenerativeModel(ai, { model: m, generationConfig: { responseMimeType: 'application/json', responseSchema: schema } }));
+
+  async function toJpegBase64(file) {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+  }
+  FridgiHooks.scanPhoto = async (file) => {
+    const data = await toJpegBase64(file);
+    let last;
+    for (const m of models) {
+      try {
+        const r = await m.generateContent([PROMPT, { inlineData: { mimeType: 'image/jpeg', data } }]);
+        return JSON.parse(r.response.text());
+      } catch (e) { last = e; if (!/404|not found|unsupported/i.test(String(e.message))) break; }
+    }
+    const msg = String(last && last.message || '');
+    const err = new Error(msg);
+    if (/429|quota|exhausted/i.test(msg)) err.friendly = "Today's free receipt scans are used up. Add items by hand below, or try again tomorrow.";
+    throw err;
+  };
+
+  /* ---- Auth ---- */
+  FridgiHooks.live = true;
+  FridgiHooks.signInGoogle = () => A.signInWithPopup(auth, new A.GoogleAuthProvider());
+  FridgiHooks.signInGuest  = () => A.signInAnonymously(auth);
+  FridgiHooks.signOut      = () => A.signOut(auth);
+
+  /* ---- Store → Firestore: users/{uid}/fridgeItems ---- */
+  Store.key = 'fridgi-live-v1';
+  Store.load();               // shopping list + activity stay on this device for now
+  Store.s.items = [];
+  const toRemote = c => REMOTE_CATS.includes(c) ? c : (c === 'condiments' ? 'pantry' : 'other');
+  const ms = t => (t && t.toMillis) ? t.toMillis() : (typeof t === 'number' ? t : null);
+  const fromDoc = d => {
+    const x = d.data(), g = guess(x.name || 'Item');
+    const cat = CATS[x.category] ? x.category : 'other';
+    return { id: d.id, key: g.key, name: x.name || 'Item', emoji: g.key ? g.e : CAT_EMOJI[cat], cat, zone: ZONE_OF[cat] || 'middle',
+      qty: x.quantity || 1, price: x.price || 0, addedBy: PEOPLE[x.addedBy] ? x.addedBy : Store.s.me,
+      addedAt: ms(x.addedAt) || Date.now(), expiresAt: ms(x.expiresAt) || Date.now() + 7 * DAY };
+  };
+  let col = null, unsub = null;
+  const fail = e => toast('⚠︎ Firebase: ' + (e.code || e.message));
+
+  Store.addItems = function (list) {
+    const ids = [];
+    list.forEach(r => {
+      const exp = Date.now() + r.days * DAY, ex = this.findByName(r.name);
+      if (ex) {
+        updateDoc(doc(col, ex.id), { quantity: ex.qty + r.qty, expiresAt: Timestamp.fromMillis(Math.max(ex.expiresAt, exp)) }).catch(fail);
+        ids.push(ex.id);
+      } else {
+        const ref = doc(col);
+        setDoc(ref, { name: r.name, category: toRemote(r.cat), quantity: r.qty, price: r.price || 0,
+          addedAt: serverTimestamp(), expiresAt: Timestamp.fromMillis(exp), addedBy: this.s.me }).catch(fail);
+        ids.push(ref.id);
+      }
+      const sl = this.s.shopping.find(x => !x.done && x.name.toLowerCase() === r.name.toLowerCase()); if (sl) sl.done = true;
+    });
+    this.s.scans++; this.log(`scanned a receipt and added <b>${list.length} item${list.length > 1 ? 's' : ''}</b>`); this.save();
+    return ids;
+  };
+  Store.use = function (id, n = 1) {
+    const it = this.s.items.find(i => i.id === id); if (!it) return;
+    const q = it.qty - n;
+    if (q <= 0) {
+      deleteDoc(doc(col, id)).catch(fail);
+      this.log(`finished the <b>${it.name}</b> and added it to the list`);
+      if (!this.s.shopping.find(x => !x.done && x.name === it.name)) this.s.shopping.unshift({ id: uid(), name: it.name, by: this.s.me, done: false });
+    } else { updateDoc(doc(col, id), { quantity: q }).catch(fail); this.log(`used 1 <b>${it.name}</b>`); }
+    this.save(); return { ...it, qty: q };
+  };
+  Store.setQty = function (id, q) {
+    const it = this.s.items.find(i => i.id === id); if (!it) return;
+    if (q <= 0) return this.use(id, it.qty);
+    updateDoc(doc(col, id), { quantity: q }).catch(fail);
+  };
+  Store.toss = function (id) {
+    const it = this.s.items.find(i => i.id === id); if (!it) return;
+    deleteDoc(doc(col, id)).catch(fail); this.log(`threw out the <b>${it.name}</b>`); this.save();
+  };
+  Store.reset = function () { const items = this.s.items; this.s = seed(); this.s.items = items; this.save(); };
+
+  A.onAuthStateChanged(auth, user => {
+    FridgiHooks.user = user;
+    if (unsub) { unsub(); unsub = null; }
+    Store.s.items = [];
+    if (user) {
+      col = collection(db, 'users', user.uid, 'fridgeItems');
+      unsub = onSnapshot(col, snap => { Store.s.items = snap.docs.map(fromDoc); Store.subs.forEach(f => f()); }, fail);
+    }
+    render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>
