@@ -53,7 +53,7 @@ input,select{font:inherit;color:inherit}
 
 /* bottom navigation: Scanner / My Fridge / Shopping */
 .tabs{position:absolute;left:0;right:0;bottom:0;height:var(--tab-h);background:var(--cream2);border-top:1px solid rgba(27,43,33,.3);
-  display:grid;grid-template-columns:repeat(3,1fr);z-index:40}
+  display:grid;grid-template-columns:repeat(4,1fr);z-index:40}
 .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:700;color:var(--ink);border-right:1px solid rgba(27,43,33,.1)}
 .tab:last-child{border-right:0}
 .tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -311,6 +311,27 @@ h2.sec{font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.1}
 @keyframes pulse{50%{opacity:.35}}
 .fridge.focus .item:not(.urgent) .pop,.fridge.focus .item2d:not(.urgent){opacity:.25;filter:grayscale(1)}
 
+/* ---------- expiry + household ---------- */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.stat{background:var(--cream2);border:1.5px solid rgba(27,43,33,.2);border-radius:16px;padding:10px 12px}
+.stat b{display:block;font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1.1}
+.stat span{display:block;font-size:11px;color:var(--muted);font-weight:600;line-height:1.2;margin-top:2px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;margin-top:22px}
+.sec-h h2{font-size:23px;font-weight:800;letter-spacing:-.04em;line-height:1.1}
+.sec-h small{font-size:12px;font-weight:600;color:var(--muted)}
+.hscroll{display:flex;gap:10px;overflow-x:auto;margin:10px -20px 0;padding:0 20px 4px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.soon{flex:none;width:124px;border-radius:18px;background:var(--sage);padding:12px 10px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.soon b{font-size:14px;line-height:1.1;margin-top:4px;font-weight:800}
+.soon .use{margin-top:6px;width:100%;font-size:12px;font-weight:800;border-radius:999px;padding:7px;background:var(--forest);color:var(--cream)}
+.okbox{margin-top:10px;border:1.5px dashed rgba(27,43,33,.25);border-radius:14px;padding:14px;font-size:13px;color:var(--muted)}
+.rlist{margin-top:4px}
+.feed{list-style:none;margin-top:6px}
+.feed li{display:flex;gap:10px;align-items:center;padding:9px 0;font-size:13.5px;line-height:1.35;border-bottom:1.5px solid rgba(27,43,33,.14)}
+.feed li:last-child{border-bottom:0}
+.feed .avatar{width:28px;height:28px;font-size:12px}
+.feed time{margin-left:auto;font-size:11px;color:var(--muted);flex:none}
+
 /* ---------- AR screen tweaks for the illustrated icons ---------- */
 .item .pop img{width:38px;height:38px;object-fit:contain}
 .bin .item2d .ico{width:26px;height:26px}
@@ -396,9 +417,9 @@ h2.sec{font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.1}
       <ol>
         <li><b>Scanner</b>: tap <b>Upload</b> or <b>Scan</b> to read a photo of a real receipt, or tap <b>Try sample receipt</b>.</li>
         <li><b>Ready to Add</b>: AI sorts the groceries and estimates when each expires. Tap one to fix its name, amount or category, then <b>Add to My Fridge</b>.</li>
-        <li><b>My Fridge</b>: filter your inventory, tap an item for expiry and nutrition, or open <b>AR View</b> to place the 3D fridge. Drag to rotate, tap the doors to open them.</li>
+        <li><b>My Fridge</b>: filter your inventory, tap an item for expiry and nutrition, or open <b>AR View</b> to place the 3D fridge. Drag to rotate, tap the doors to open them. Food about to expire shows under <b>Use it soon</b>.</li>
         <li><b>Shopping</b>: tick items off, see deals and coupons, and get recipe ideas from what you already have.</li>
-        <li><b>Shared kitchen</b>: tap “Shared Kitchen” on My Fridge to switch roommates.</li>
+        <li><b>Household</b>: switch roommates, see who added what, and follow the activity feed (“Kiara finished the milk”).</li>
       </ol>
     </div>
     <div class="box">
@@ -478,12 +499,16 @@ h2.sec{font-size:22px;font-weight:800;letter-spacing:-.035em;line-height:1.1}
 
       <!-- 03 Shopping -->
       <section class="screen" id="s-shopping"></section>
+
+      <!-- 04 Household -->
+      <section class="screen" id="s-household"></section>
     </main>
 
     <nav class="tabs" id="tabs">
       <button class="tab" data-go="scan"><svg viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M7 12h10"/></svg>Scanner</button>
       <button class="tab" data-go="fridge"><svg viewBox="0 0 24 24"><rect x="5" y="2.5" width="14" height="19" rx="3"/><path d="M5 10h14M9 6v1.5M9 13v3"/></svg>My Fridge</button>
       <button class="tab" data-go="shopping"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>Shopping</button>
+      <button class="tab" data-go="household"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 5 2.2 5 5"/></svg>Household</button>
     </nav>
 
     <div class="scrim" id="scrim"></div>
@@ -718,9 +743,9 @@ function iconHTML(it, px=40){
 }
 
 /* ---------- routing: Scanner / My Fridge / (AR View) / Shopping ---------- */
-const SCREENS = ['scan','fridge','ar','shopping'];
+const SCREENS = ['scan','fridge','ar','shopping','household'];
 const TAB_OF = {ar:'fridge'};
-const HASH_ALIAS = {home:'scan', inventory:'fridge', household:'shopping'};
+const HASH_ALIAS = {home:'scan', inventory:'fridge'};
 let current = 'scan';
 let tileEditing = null;
 function go(name){
@@ -1178,15 +1203,20 @@ function renderMyFridge(){
       <button class="arbtn" data-go="ar">${IC.cube}AR View</button>
       <img class="ico" src="icons/fridge.webp" alt="Your fridge" data-go="ar" style="cursor:pointer">
       <div class="hint">Tap the fridge to open AR View</div></div>
+    ${expiryHTML()}
     <div class="inv-h"><h2>Your Inventory</h2><button id="viewAll">View All ›</button></div>
     <div class="chips">${chips.map(([k,v])=>`<button class="chip ${invFilter===k?'on':''}" data-f="${k}">${v}</button>`).join('')}</div>
     <div class="inv">${list.length ? list.map(rowHTML).join('') : `<div class="empty">Nothing here yet.<br><br><button class="btn sm" data-go="scan">Scan a receipt</button></div>`}</div>
+    ${cookHTML()}
     ${last?`<div class="updated">Last updated ${last==='now'?'just now':last+' ago'}</div>`:''}`;
   el.scrollTop = keep;
   refreshAcct();
 }
 $('#s-fridge').addEventListener('click', e=>{
   if(e.target.closest('#whoBtn')) return openWho();
+  const u = e.target.closest('[data-use]');
+  if(u){ const it = Store.use(u.dataset.use); if(it) toast(`${PEOPLE[Store.s.me].name} used ${it.name}${it.qty<=0?' · added to list':''}`); return; }
+  const rc = e.target.closest('[data-recipe]'); if(rc) return openRecipe(rc.dataset.recipe);
   if(e.target.closest('#viewAll')){ invFilter='all'; return renderMyFridge(); }
   const c = e.target.closest('[data-f]'); if(c){ invFilter = c.dataset.f; return renderMyFridge(); }
   const r = e.target.closest('[data-open]'); if(r) openItem(r.dataset.open);
@@ -1265,11 +1295,65 @@ $('#s-shopping').addEventListener('submit', e=>{
   setTimeout(()=>{ const x = $('#shopInput'); if(x) x.focus(); }, 0);
 });
 
+/* =========================================================
+   EXPIRY (shown on My Fridge)
+   ========================================================= */
+function expiryHTML(){
+  const items = Store.s.items;
+  const soon = items.filter(i=>daysLeft(i)<=3).sort((a,b)=>a.expiresAt-b.expiresAt);
+  const atRisk = soon.reduce((t,i)=>t+(i.price||0),0);
+  const units = items.reduce((t,i)=>t+i.qty,0);
+  return `
+    <div class="stats">
+      <div class="stat"><b>${units}</b><span>items in fridge</span></div>
+      <div class="stat"><b class="${soon.length?'t-red':''}">${soon.length}</b><span>expiring in 3 days</span></div>
+      <div class="stat"><b>$${atRisk.toFixed(0)}</b><span>of food at risk</span></div>
+    </div>
+    <div class="sec-h"><h2>Use it soon</h2><small>${soon.length?'Expiry alerts':''}</small></div>
+    ${soon.length ? `<div class="hscroll">${soon.map(i=>{ const d = daysLeft(i); return `
+      <div class="soon">${iconHTML(i,40)}<b>${esc(i.name)}</b><span class="pill ${expCls(d)}">${expLabel(d)}</span>
+        <button class="use" data-use="${i.id}">Used it</button></div>`; }).join('')}</div>`
+      : `<div class="okbox">Nothing is about to expire. 🎉</div>`}`;
+}
+function cookHTML(){
+  const recs = scoreRecipes().slice(0,3);
+  return `<div class="sec-h"><h2>Cook with what's expiring</h2></div>
+    <div class="rlist">${recs.map(r=>`<button class="recipe" data-recipe="${esc(r.name)}"><span class="em">${r.e}</span>
+      <span><b>${esc(r.name)}</b><small>${r.time} min · you have ${r.have}/${r.uses.length}${r.urgent?` · uses <span class="t-red">${r.urgent} expiring</span>`:''}</small></span></button>`).join('')}</div>`;
+}
+
+/* =========================================================
+   04  HOUSEHOLD  (roommates, shared list, activity)
+   ========================================================= */
+function renderHousehold(){
+  const el = $('#s-household'), S = Store.s, keep = el.scrollTop;
+  const added = {}; S.items.forEach(i=>{ added[i.addedBy] = (added[i.addedBy]||0) + i.qty; });
+  const open = S.shopping.filter(x=>!x.done);
+  const person = p => (PEOPLE[p] ? PEOPLE[p].name : 'Someone');
+  el.innerHTML = `
+    <div class="hd"><div class="hd-top"><div class="wm">Fridgi</div><div class="acct-slot"></div></div><div class="eyebrow">04 / SHARED KITCHEN</div></div>
+    <h1 class="title">Household</h1>
+    <p class="sub">Everyone sees the same fridge, so nobody buys a duplicate and everyone knows who finished the milk.</p>
+    <div class="members">${Object.keys(PEOPLE).map(p=>`<button class="member ${p===S.me?'me':''}" data-me="${p}">${av(p)}<b>${PEOPLE[p].name}${p===S.me?' (you)':''}</b><small>${added[p]||0} items added</small></button>`).join('')}</div>
+    <div class="sec-h"><h2>Shopping list</h2><small>${open.length} to buy</small></div>
+    <ul class="shop">${open.length ? open.map(x=>`<li data-sid="${x.id}"><span class="cb" role="checkbox" aria-checked="false" aria-label="Mark ${esc(x.name)} as bought"></span><span class="mid"><span class="nm">${esc(x.name)}</span><small>added by ${person(x.by)}</small></span></li>`).join('') : '<li><span class="muted" style="font-size:13px">Nothing on the list.</span></li>'}</ul>
+    <button class="btn sage block" data-go="shopping" style="margin-top:10px">Open shopping list →</button>
+    <div class="sec-h"><h2>Activity</h2><small>Shared with ${Object.keys(PEOPLE).length}</small></div>
+    <ul class="feed">${S.activity.slice(0,12).map(a=>`<li>${av(a.by)}<span><b>${person(a.by)}</b> ${a.text}</span><time>${ago(a.at)}</time></li>`).join('')}</ul>`;
+  el.scrollTop = keep;
+  refreshAcct();
+}
+$('#s-household').addEventListener('click', e=>{
+  const m = e.target.closest('[data-me]'); if(m){ Store.setMe(m.dataset.me); toast(`Now using Fridgi as ${PEOPLE[m.dataset.me].name}`); return; }
+  const li = e.target.closest('[data-sid]'); if(li) Store.toggleShop(li.dataset.sid);
+});
+
 /* ---------- render + start ---------- */
 function render(){
   if(current==='scan') paintScan();
   if(current==='fridge') renderMyFridge();
   if(current==='shopping') renderShopping();
+  if(current==='household') renderHousehold();
   renderFridge();
   refreshAcct();
 }
